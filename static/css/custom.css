@@ -1,0 +1,114 @@
+/* Color Tokens */
+:root {
+  --navy-950: #050F1C;
+  --navy-900: #0A2540;
+  --navy-800: #0D3060;
+  --navy-700: #1A4480;
+  --teal-500: #00D4C8;
+  --teal-400: #00EDE0;
+  --violet-500: #635BFF;
+  --violet-400: #7C75FF;
+  --amber-500: #F59E0B;
+  --emerald-500: #10B981;
+  --rose-500: #EF4444;
+  --slate-100: #F1F5F9;
+  --slate-900: #0F172A;
+}
+
+body {
+  font-family: 'Inter', 'SF Pro Display', system-ui, sans-serif;
+  background-color: var(--navy-950);
+  color: white;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Map grid background texture */
+.bg-grid {
+  background-image: linear-gradient(rgba(0,212,200,0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(0,212,200,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Pulsing live indicator */
+@keyframes pulse-teal {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 212, 200, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 212, 200, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 212, 200, 0); }
+}
+.live-dot { 
+  display: inline-block;
+  width: 10px; height: 10px; border-radius: 50%;
+  background-color: var(--teal-500);
+  animation: pulse-teal 2s infinite; 
+}
+
+/* Glassmorphism card */
+.glass-card {
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+.glass-card:hover {
+  border-color: rgba(255,255,255,0.15);
+}
+
+/* Transport mode tag colors */
+.mode-road  { background: #00D4C8; color: var(--navy-950); }
+.mode-air   { background: #635BFF; color: white; }
+.mode-sea   { background: #0EA5E9; color: white; }
+.mode-rail  { background: #F59E0B; color: white; }
+
+/* Animated gradient border */
+@keyframes gradient-border {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.ai-card { 
+  position: relative;
+  border-radius: 16px;
+}
+.ai-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 17px;
+  padding: 1px;
+  background: linear-gradient(135deg, #00D4C8 0%, #635BFF 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  background-size: 200% 200%;
+  animation: gradient-border 3s ease infinite;
+}
+
+/* Smooth sidebar transition */
+.sidebar { transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
+
+/* Data source badge */
+.badge-live { background: #10B981; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 12px; }
+.badge-sim  { background: #F59E0B; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 12px; }
+
+/* Mobile bottom sheet */
+.bottom-sheet { 
+  position: fixed; bottom: 0; left: 0; right: 0;
+  border-radius: 20px 20px 0 0;
+  transform: translateY(100%);
+  transition: transform 0.3s ease-out;
+}
+.bottom-sheet.open { transform: translateY(0); }
+
+/* Chart container responsive */
+.chart-container { position: relative; height: 280px; width: 100%; }
+
+/* Map custom height */
+.map-full { height: 550px; width: 100%; border-radius: 16px; overflow: hidden; }
+.map-nav { height: 400px; width: 100%; border-radius: 16px; overflow: hidden; }
+.map-driver { height: 80vh; width: 100%; }
