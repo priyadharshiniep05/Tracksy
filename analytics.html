@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex-col gap-6">
+    <h2 class="mb-2">Logistics Analytics Overview</h2>
+
+    <!-- Row 1 -->
+    <div class="grid-cols-3">
+        <div class="card">
+            <h3 class="mb-4">Predicted vs Actual (hrs)</h3>
+            <div style="height: 250px"><canvas id="c1"></canvas></div>
+        </div>
+        <div class="card">
+            <h3 class="mb-4">Shipments by Mode</h3>
+            <div style="height: 250px"><canvas id="c2"></canvas></div>
+        </div>
+        <div class="card">
+            <h3 class="mb-4">Delay Probability Trend (30 Days)</h3>
+            <div style="height: 250px"><canvas id="c3"></canvas></div>
+        </div>
+    </div>
+
+    <!-- Row 2 -->
+    <div class="grid-cols-2">
+        <div class="card">
+            <h3 class="mb-4">Cost Comparison by Route (k INR)</h3>
+            <div style="height: 300px"><canvas id="c4"></canvas></div>
+        </div>
+        <div class="card">
+            <h3 class="mb-4">Shipments by Priority</h3>
+            <div style="height: 300px"><canvas id="c5"></canvas></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Common Chart.js options for Dark Theme
+    Chart.defaults.color = '#94a3b8';
+    const gridOptions = { color: '#2e3b4e' };
+
+    // 1. Predicted vs Actual (Bar)
+    new Chart(document.getElementById('c1'), {
+        type: 'bar',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [
+                { label: 'Predicted', data: [18, 24, 12, 36, 18, 24, 12], backgroundColor: '#00d4ff' },
+                { label: 'Actual', data: [19, 24, 15, 35, 21, 24, 12], backgroundColor: '#ffaa00' }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { x: { grid: gridOptions }, y: { grid: gridOptions } } }
+    });
+
+    // 2. Map Modes (Pie)
+    new Chart(document.getElementById('c2'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Road', 'Rail', 'Air', 'Water'],
+            datasets: [{
+                data: [45, 30, 20, 5],
+                backgroundColor: ['#00d4ff', '#00ff88', '#ffaa00', '#ff4444'],
+                borderWidth: 0
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    // 3. Delay Trend (Line/Area)
+    new Chart(document.getElementById('c3'), {
+        type: 'line',
+        data: {
+            labels: Array.from({ length: 30 }, (_, i) => i + 1),
+            datasets: [{
+                label: 'Delay Probability %',
+                data: Array.from({ length: 30 }, (_, i) => Math.floor(Math.random() * 20) + (i > 20 && i < 25 ? 40 : 10)),
+                borderColor: '#ff4444',
+                backgroundColor: 'rgba(255, 68, 68, 0.15)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false }, y: { grid: gridOptions } } }
+    });
+
+    // 4. Cost Comparison by Route (Horizontal Stacked Bar)
+    new Chart(document.getElementById('c4'), {
+        type: 'bar',
+        data: {
+            labels: ['Mumbai-Delhi', 'Blr-Chennai', 'Delhi-Kol'],
+            datasets: [
+                { label: 'Road', data: [45, 15, 65], backgroundColor: '#00d4ff' },
+                { label: 'Rail', data: [22, 12, 35], backgroundColor: '#00ff88' },
+                { label: 'Air', data: [110, 45, 140], backgroundColor: '#ffaa00' }
+            ]
+        },
+        options: {
+            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            scales: { x: { stacked: true, grid: gridOptions }, y: { stacked: true, grid: gridOptions } }
+        }
+    });
+
+    // 5. Priorities (Bar)
+    new Chart(document.getElementById('c5'), {
+        type: 'bar',
+        data: {
+            labels: ['Urgent', 'Normal'],
+            datasets: [{
+                label: 'Shipments',
+                data: [320, 928],
+                backgroundColor: ['#ffaa00', '#00d4ff']
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { x: { grid: gridOptions }, y: { grid: gridOptions } } }
+    });
+</script>
+{% endblock %}

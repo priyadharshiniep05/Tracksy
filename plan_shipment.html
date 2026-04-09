@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid-cols-2" style="align-items: start;">
+
+    <!-- LEFT: Input Form -->
+    <div class="card">
+        <h2 class="mb-4">Plan Your Shipment</h2>
+        <form id="planForm" class="flex-col gap-4">
+
+            <div class="grid-cols-2">
+                <div class="flex-col gap-2">
+                    <label>📍 Source City</label>
+                    <input type="text" id="source" value="Mumbai" required />
+                </div>
+                <div class="flex-col gap-2">
+                    <label>📍 Destination City</label>
+                    <input type="text" id="dest" value="Delhi" required />
+                </div>
+            </div>
+
+            <div class="grid-cols-2">
+                <div class="flex-col gap-2">
+                    <label>⚖️ Package Weight (kg)</label>
+                    <input type="number" id="weight" value="25" required min="1" />
+                </div>
+                <div class="flex-col gap-2">
+                    <label>📦 Package Type</label>
+                    <select>
+                        <option>Electronics</option>
+                        <option>Pharma</option>
+                        <option>Fragile</option>
+                        <option>General</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-cols-3">
+                <div class="flex-col gap-2">
+                    <label>🚨 Priority</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="button" class="btn-primary" value="Normal" style="opacity: 0.5"
+                            onclick="this.style.opacity=1; this.nextElementSibling.style.opacity=0.5;" />
+                        <input type="button" class="btn-primary" value="Urgent"
+                            style="opacity: 1; border: 1px solid var(--accent-cyan)"
+                            onclick="this.style.opacity=1; this.previousElementSibling.style.opacity=0.5;" />
+                    </div>
+                </div>
+                <div class="flex-col gap-2">
+                    <label>🌤️ Weather</label>
+                    <select id="weatherSelect">
+                        <option>Clear</option>
+                        <option>Rain</option>
+                        <option>Storm</option>
+                        <option>Fog</option>
+                    </select>
+                </div>
+                <div class="flex-col gap-2">
+                    <label>🚗 Traffic Level</label>
+                    <select>
+                        <option>Low</option>
+                        <option>Medium</option>
+                        <option>High</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-accent mt-4 flex-center gap-2" style="font-size: 1.1rem; padding: 1rem;">
+                🤖 Find Best Route
+            </button>
+        </form>
+    </div>
+
+    <!-- RIGHT: AI Results Panel -->
+    <div class="flex-col gap-4">
+
+        <div id="panelEmpty" class="card flex-center flex-col gap-4"
+            style="min-height: 300px; color: var(--text-muted)">
+            <i data-lucide="zap" style="width: 48px; height: 48px; opacity: 0.3"></i>
+            <p>Enter shipment details and let Claude AI optimize the route.</p>
+        </div>
+
+        <div id="panelLoading" class="card flex-center flex-col gap-4"
+            style="display: none; min-height: 300px; border-color: var(--accent-cyan); box-shadow: 0 0 20px var(--accent-cyan-dim)">
+            <i data-lucide="loader-2" class="route-anim"
+                style="color: var(--accent-cyan); width: 48px; height: 48px; animation: spin 2s linear infinite"></i>
+            <h3 class="text-gradient">🤖 AI is optimizing your route...</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem">Analyzing weather patterns, traffic density, and
+                multi-modal schedules.</p>
+        </div>
+
+        <div id="panelResults" class="flex-col gap-4 fade-in" style="display: none;">
+
+            <div id="alertBox" class="card"
+                style="display: none; border-color: var(--status-danger); box-shadow: 0 0 15px var(--status-danger-dim); background: var(--status-danger-dim)">
+                <div class="flex-center gap-2" style="color: var(--status-danger)">
+                    <i data-lucide="alert-triangle"></i>
+                    <strong>High delay risk detected. See Claude's recommendation below.</strong>
+                </div>
+            </div>
+
+            <div class="card" id="bestRouteCard"
+                style="border-color: var(--accent-cyan); box-shadow: 0 0 15px var(--accent-cyan-dim)">
+                <div class="flex-between mb-4">
+                    <h2 class="text-gradient flex-center gap-2">🏆 BEST ROUTE</h2>
+                    <span id="riskBadge" class="badge success">Risk: Low</span>
+                </div>
+
+                <div class="flex-col gap-4">
+                    <div id="routePath" style="font-size: 1.5rem; font-weight: 600">🚚 Truck ➔ 🚂 Train ➔ 🚚 Truck</div>
+                    <div class="grid-cols-3">
+                        <div><label style="color: var(--text-muted)">ETA</label>
+                            <div id="routeEta" style="font-size: 1.2rem; font-weight: 600">18 hrs</div>
+                        </div>
+                        <div><label style="color: var(--text-muted)">Cost</label>
+                            <div id="routeCost" style="font-size: 1.2rem; font-weight: 600">₹24,500</div>
+                        </div>
+                        <div><label style="color: var(--text-muted)">Distance</label>
+                            <div id="routeDist" style="font-size: 1.2rem; font-weight: 600">1450 km</div>
+                        </div>
+                    </div>
+                    <div id="routeReason"
+                        style="padding: 1rem; background: var(--bg-input); border-radius: 8px; border-left: 4px solid var(--status-success)">
+                        <strong>Reasoning:</strong> Bypasses high-traffic zones and maintains optimal ETA.
+                    </div>
+                    <button onclick="bookShipment()" class="btn-success flex-center gap-2"
+                        style="font-size: 1.1rem; padding: 0.8rem; margin-top: 0.5rem">
+                        <i data-lucide="check-circle"></i> Book This Shipment
+                    </button>
+                </div>
+            </div>
+
+            <div class="card" style="border-left: 4px solid var(--accent-cyan)">
+                <strong style="color: var(--accent-cyan)">AI Recommendation</strong>
+                <p id="recText" style="font-style: italic; margin-top: 0.5rem">"Claude recommends prioritizing the rail
+                    corridor..."</p>
+            </div>
+
+            <h3 class="mt-4 mb-2">Alternative Routes</h3>
+            <div class="grid-cols-3">
+                <div class="card glow-hover" style="padding: 1rem">
+                    <div style="color: var(--text-secondary); font-weight: 600; margin-bottom: 0.5rem">Fastest</div>
+                    <div style="font-size: 1.1rem; margin-bottom: 0.5rem">✈️ Air ➔ 🚚 Truck</div>
+                    <div class="flex-between"><span id="altFastEta">6 hrs</span><strong
+                            style="color: var(--status-success)" id="altFastCost">₹85,000</strong></div>
+                </div>
+                <div class="card glow-hover" style="padding: 1rem">
+                    <div style="color: var(--text-secondary); font-weight: 600; margin-bottom: 0.5rem">Cheapest</div>
+                    <div style="font-size: 1.1rem; margin-bottom: 0.5rem">🚂 Train ➔ 🚚 Truck</div>
+                    <div class="flex-between"><span id="altCheapEta">26 hrs</span><strong
+                            style="color: var(--status-success)" id="altCheapCost">₹15,000</strong></div>
+                </div>
+                <div class="card glow-hover" style="padding: 1rem">
+                    <div style="color: var(--text-secondary); font-weight: 600; margin-bottom: 0.5rem">Balanced</div>
+                    <div style="font-size: 1.1rem; margin-bottom: 0.5rem">🚚 Road only</div>
+                    <div class="flex-between"><span id="altBalEta">21 hrs</span><strong
+                            style="color: var(--status-success)" id="altBalCost">₹21,000</strong></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('planForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const source = document.getElementById('source').value || 'Mumbai';
+        const dest = document.getElementById('dest').value || 'Delhi';
+        const weightInput = document.getElementById('weight');
+        const weight = weightInput ? parseFloat(weightInput.value) || 25 : 25;
+
+        document.getElementById('panelEmpty').style.display = 'none';
+        document.getElementById('panelResults').style.display = 'none';
+        document.getElementById('panelLoading').style.display = 'flex';
+
+        fetch('/api/predict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ source, destination: dest, weight })
+        })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('panelLoading').style.display = 'none';
+                document.getElementById('panelResults').style.display = 'flex';
+
+                const isStorm = document.getElementById('weatherSelect').value === 'Storm';
+                if (isStorm) {
+                    document.getElementById('alertBox').style.display = 'flex';
+                    document.getElementById('riskBadge').className = 'badge danger';
+                    document.getElementById('riskBadge').textContent = 'Risk: High';
+                    document.getElementById('routeReason').style.borderLeftColor = 'var(--status-danger)';
+                    document.getElementById('routeReason').innerHTML = `<strong>Reasoning:</strong> Severe thunderstorms expected between ${source} and ${dest}. Rerouting via eastern corridor recommended.`;
+                    document.getElementById('recText').textContent = `"CRITICAL: High risk of delay due to severe weather from ${source}. Rerouting via alternative eastern corridor is highly advised despite higher costs."`;
+                } else {
+                    document.getElementById('alertBox').style.display = 'none';
+                    document.getElementById('riskBadge').className = 'badge success';
+                    document.getElementById('riskBadge').textContent = 'Risk: Low';
+                    document.getElementById('routeReason').style.borderLeftColor = 'var(--status-success)';
+                    document.getElementById('routeReason').innerHTML = `<strong>Reasoning:</strong> Bypasses high-traffic zones leading into ${dest} and maintains optimal ETA.`;
+                    document.getElementById('recText').textContent = `"Claude recommends prioritizing the rail corridor from ${source} to avoid expected heavy rainfall in southern highway segments near ${dest}."`;
+                }
+
+                const rDist = data.distance;
+
+                document.getElementById('routeEta').textContent = `${data.modes.best.eta} hrs`;
+                document.getElementById('routeCost').textContent = `₹${data.modes.best.cost.toLocaleString()}`;
+                document.getElementById('routeDist').textContent = `${rDist} km`;
+
+                document.getElementById('altFastEta').innerHTML = `${data.modes.fastest.eta} hrs`;
+                document.getElementById('altFastCost').innerHTML = `₹${data.modes.fastest.cost.toLocaleString()}`;
+
+                document.getElementById('altCheapEta').innerHTML = `${data.modes.cheapest.eta} hrs`;
+                document.getElementById('altCheapCost').innerHTML = `₹${data.modes.cheapest.cost.toLocaleString()}`;
+
+                document.getElementById('altBalEta').innerHTML = `${data.modes.balanced.eta} hrs`;
+                document.getElementById('altBalCost').innerHTML = `₹${data.modes.balanced.cost.toLocaleString()}`;
+            })
+            .catch(err => {
+                console.error("API error", err);
+                document.getElementById('panelLoading').innerHTML = "<h3>Error fetching AI route</h3>";
+            });
+    });
+
+    window.bookShipment = function () {
+        const source = document.getElementById('source').value || 'Mumbai';
+        const dest = document.getElementById('dest').value || 'Delhi';
+        localStorage.setItem('tracked_source', source.trim());
+        localStorage.setItem('tracked_dest', dest.trim());
+        window.location.href = '/tracker';
+    };
+</script>
+{% endblock %}

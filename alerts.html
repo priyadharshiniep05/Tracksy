@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex-col gap-6" style="max-width: 900px; margin: 0 auto">
+
+    <!-- Header -->
+    <div class="flex-between">
+        <h2 class="flex-center gap-3">
+            <div style="position: relative">
+                <i data-lucide="alert-triangle" style="color: var(--status-danger); width: 28px; height: 28px"></i>
+                <div class="ai-status-dot"
+                    style="position: absolute; top: -5px; right: -5px; background-color: var(--status-danger); animation: pulseGlow 1s infinite">
+                </div>
+            </div>
+            Active Delay Alerts
+        </h2>
+
+        <!-- Filter Tabs -->
+        <div class="flex-center gap-2"
+            style="background: var(--bg-card); padding: 0.4rem; border-radius: 12px; border: 1px solid var(--border-color)"
+            id="filterTabs">
+            <button class="filter-btn active" data-filter="All"
+                style="padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600">All</button>
+            <button class="filter-btn" data-filter="Critical"
+                style="padding: 0.5rem 1rem; border-radius: 8px">Critical</button>
+            <button class="filter-btn" data-filter="Medium"
+                style="padding: 0.5rem 1rem; border-radius: 8px">Medium</button>
+        </div>
+    </div>
+
+    <!-- Alert Cards Container -->
+    <div class="flex-col gap-4" id="alertsContainer">
+        <!-- Javascript renders alerts here -->
+    </div>
+
+</div>
+
+<style>
+    .filter-btn {
+        color: var(--text-secondary);
+    }
+
+    .filter-btn.active {
+        color: var(--accent-cyan);
+        background: var(--accent-cyan-dim);
+    }
+
+    .fade-in {
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let ALERTS = [
+        { id: 'SHP002', route: 'Mumbai → Chennai', risk: 65, reason: 'Storm warning at Chennai Airport', curr: 'Air', sugg: 'Road + Rail', eta: '+4 hrs', type: 'Critical', accepted: false },
+        { id: 'SHP104', route: 'Delhi → Pune', risk: 42, reason: 'Heavy traffic on NH48', curr: 'Road', sugg: 'Express Rail', eta: '-2 hrs', type: 'Medium', accepted: false },
+        { id: 'SHP089', route: 'Blr → Hyderabad', risk: 85, reason: 'Highway blockade reported', curr: 'Road', sugg: 'Air', eta: '-1 hr', type: 'Critical', accepted: false },
+    ];
+
+    let currentFilter = 'All';
+
+    function renderAlerts() {
+        const container = document.getElementById('alertsContainer');
+        const filterd = ALERTS.filter(a => currentFilter === 'All' || a.type === currentFilter);
+
+        if (filterd.length === 0) {
+            container.innerHTML = `
+                <div class="card flex-center flex-col gap-4" style="color: var(--text-muted); min-height: 200px">
+                    <i data-lucide="shield-alert" style="width: 48px; height: 48px; opacity: 0.3"></i>
+                    <p>No alerts in this category.</p>
+                </div>
+            `;
+            lucide.createIcons();
+            return;
+        }
+
+        container.innerHTML = filterd.map(a => {
+            if (a.accepted) {
+                return `
+                <div class="card fade-in" style="border-color: var(--status-success); border-left: 4px solid var(--status-success)">
+                    <div class="flex-center gap-3" style="color: var(--status-success); padding: 1rem 0">
+                        <i data-lucide="check-circle" style="width: 24px; height: 24px"></i>
+                        <strong style="font-size: 1.2rem">Route updated successfully — new ETA scheduled.</strong>
+                    </div>
+                </div>`;
+            }
+
+            const colorVar = a.type === 'Critical' ? 'var(--status-danger)' : 'var(--status-warning)';
+            return `
+            <div class="card fade-in" style="border-color: ${colorVar}; border-left: 4px solid ${colorVar}">
+                <div class="flex-col gap-4">
+                    <div class="flex-between">
+                        <div class="flex-center gap-3">
+                            <span style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary)">${a.id}</span>
+                            <span style="color: var(--text-secondary)">${a.route}</span>
+                        </div>
+                        <span class="badge ${a.type === 'Critical' ? 'danger' : 'warning'}">Risk: ${a.risk}%</span>
+                    </div>
+
+                    <div class="grid-cols-2">
+                        <div class="flex-col gap-2"><div style="color: var(--text-muted)">Issue</div><strong>${a.reason}</strong></div>
+                        <div class="flex-col gap-2">
+                            <div style="color: var(--text-muted)">Action</div>
+                            <div class="flex-center gap-2" style="justify-content: flex-start">
+                                <span style="text-decoration: line-through; color: var(--text-secondary)">${a.curr}</span>
+                                <i data-lucide="navigation" style="color: var(--accent-cyan); width: 14px"></i>
+                                <strong style="color: var(--accent-cyan)">${a.sugg}</strong>
+                                <span style="margin-left: 0.5rem; color: ${a.eta.startsWith('-') ? 'var(--status-success)' : 'var(--status-warning)'}">(${a.eta})</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex-center gap-4 mt-2" style="justify-content: flex-start">
+                        <button onclick="acceptAlert('${a.id}')" class="btn-success flex-center gap-2">
+                            <i data-lucide="zap" style="width: 18px"></i> Accept Re-route
+                        </button>
+                        <button onclick="ignoreAlert('${a.id}')" class="btn-primary" style="background: var(--bg-input)">Ignore</button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
+        lucide.createIcons();
+    }
+
+    window.acceptAlert = (id) => {
+        ALERTS = ALERTS.map(a => a.id === id ? { ...a, accepted: true } : a);
+        renderAlerts();
+    };
+
+    window.ignoreAlert = (id) => {
+        ALERTS = ALERTS.filter(a => a.id !== id);
+        renderAlerts();
+    };
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.filter-btn').forEach(b => { b.classList.remove('active'); b.style.fontWeight = '400'; });
+            e.target.classList.add('active');
+            e.target.style.fontWeight = '600';
+            currentFilter = e.target.getAttribute('data-filter');
+            renderAlerts();
+        });
+    });
+
+    renderAlerts();
+</script>
+{% endblock %}

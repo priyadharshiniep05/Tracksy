@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex-col gap-6">
+
+    <!-- Top Search Bar -->
+    <form id="searchForm" class="flex-between gap-4 card" style="padding: 1rem 1.5rem">
+        <div class="flex-center gap-4" style="flex: 1">
+            <i data-lucide="search" style="color: var(--text-muted)"></i>
+            <input type="text" id="trackId" value="SHP001" placeholder="Enter Shipment ID"
+                style="flex: 1; background: transparent; border: none; font-size: 1.2rem; padding: 0" autofocus />
+        </div>
+        <button type="submit" class="btn-primary flex-center gap-2">
+            Track Shipment
+        </button>
+    </form>
+
+    <div class="grid-cols-4" style="align-items: stretch;">
+
+        <!-- Map Area -->
+        <div class="card"
+            style="grid-column: span 3; padding: 0; overflow: hidden; height: 600px; display: flex; flex-direction: column">
+            <div id="trackerMap" style="height: 100%; width: 100%; background: #1a1f2b"></div>
+        </div>
+
+        <!-- Sidebar Feed -->
+        <div class="card flex-col gap-6" style="grid-column: span 1; overflow-y: auto; max-height: 600px">
+
+            <div id="statusBanner"
+                style="padding: 1rem; border-radius: 8px; background: var(--status-success-dim); border: 1px solid var(--status-success); text-align: center">
+                <h3 id="statusText" style="color: var(--status-success)">IN TRANSIT - ON TRACK</h3>
+            </div>
+
+            <div class="flex-col gap-4 timeline" id="timelineFeed">
+                <div class="flex-col gap-2">
+                    <div class="flex-center gap-2" style="color: var(--status-success)">
+                        <i data-lucide="check-circle-2"></i> <span style="font-weight: 600">09:00 — Picked Up</span>
+                    </div>
+                    <div id="originText" style="color: var(--text-muted); font-size: 0.9rem; margin-left: 1.7rem">Origin
+                        Facility</div>
+                </div>
+
+                <div class="flex-col gap-2">
+                    <div class="flex-center gap-2" style="color: var(--accent-cyan)">
+                        <i data-lucide="refresh-cw" style="animation: spin 3s linear infinite"></i>
+                        <span style="font-weight: 600">14:00 — In Transit</span>
+                    </div>
+                    <div id="transitText" style="color: var(--text-muted); font-size: 0.9rem; margin-left: 1.7rem">
+                        Express Corridor to Destination</div>
+                </div>
+            </div>
+
+            <div style="margin-top: auto">
+                <button id="simDelay" class="btn-danger flex-center"
+                    style="width: 100%; padding: 1rem; margin-top: 1rem; justify-content: space-between">
+                    Simulate Delay <i data-lucide="alert-circle"></i>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <style>
+        .timeline>div {
+            position: relative;
+        }
+
+        .timeline>div:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 24px;
+            bottom: -16px;
+            width: 2px;
+            background: var(--border-color);
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const CITIES = {
+        mumbai: { lat: 19.0760, lon: 72.8777 },
+        delhi: { lat: 28.7041, lon: 77.1025 },
+        bangalore: { lat: 12.9716, lon: 77.5946 },
+        hyderabad: { lat: 17.3850, lon: 78.4867 },
+        chennai: { lat: 13.0827, lon: 80.2707 },
+        kolkata: { lat: 22.5726, lon: 88.3639 },
+        pune: { lat: 18.5204, lon: 73.8567 },
+        ahmedabad: { lat: 23.0225, lon: 72.5714 },
+        jaipur: { lat: 26.9124, lon: 75.7873 },
+        goa: { lat: 15.2993, lon: 74.1240 },
+        panaji: { lat: 15.4909, lon: 73.8278 },
+        kochi: { lat: 9.9312, lon: 76.2673 },
+        trivandrum: { lat: 8.5241, lon: 76.9366 },
+        lucknow: { lat: 26.8467, lon: 80.9462 },
+        kanpur: { lat: 26.4499, lon: 80.3319 },
+        nagpur: { lat: 21.1458, lon: 79.0882 },
+        indore: { lat: 22.7196, lon: 75.8577 },
+        surat: { lat: 21.1702, lon: 72.8311 },
+        patna: { lat: 25.5941, lon: 85.1376 },
+        bhopal: { lat: 23.2599, lon: 77.4126 }
+    };
+
+    function getCityCoord(city) {
+        const val = city.trim().toLowerCase();
+        if (CITIES[val]) return CITIES[val];
+        let hash = 0;
+        for (let i = 0; i < val.length; i++) {
+            hash = val.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        hash = Math.abs(hash);
+        return { lat: 10 + (hash % 18), lon: 70 + ((hash >> 3) % 18) };
+    }
+
+    const savedSource = localStorage.getItem('tracked_source') || 'bangalore';
+    const savedDest = localStorage.getItem('tracked_dest') || 'delhi';
+    const sCity = getCityCoord(savedSource);
+    const dCity = getCityCoord(savedDest);
+
+    document.getElementById('originText').textContent = `${savedSource.charAt(0).toUpperCase() + savedSource.slice(1)} Hub Facility`;
+    document.getElementById('transitText').textContent = `In Transit to ${savedDest.charAt(0).toUpperCase() + savedDest.slice(1)}`;
+
+    const map = L.map('trackerMap', { zoomControl: false });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+    const CA = [sCity.lat, sCity.lon]; // Source
+    const CC = [dCity.lat, dCity.lon]; // Destination
+    const CB = [(sCity.lat + dCity.lat) / 2, (sCity.lon + dCity.lon) / 2]; // Midpoint
+    const CD = [CB[0] + 1.5, CB[1] - 1.5]; // Delay off-route
+
+    let activeLayer;
+    let markerLayer;
+
+    function renderNormal() {
+        if (activeLayer) map.removeLayer(activeLayer);
+        if (markerLayer) map.removeLayer(markerLayer);
+
+        L.marker(CA, { icon: createGlowMarker(COLORS.warning) }).addTo(map);
+        L.marker(CC, { icon: createGlowMarker(COLORS.warning) }).addTo(map);
+        L.polyline([CA, CB], { color: COLORS.accent, weight: 4 }).addTo(map);
+
+        activeLayer = L.polyline([CB, CC], { color: COLORS.success, weight: 4, dashArray: '5, 8' }).addTo(map);
+        markerLayer = L.marker(CB, { icon: createPulseGlowMarker(COLORS.accent) }).addTo(map);
+
+        // Auto-center tracking map to perfectly frame Route Elements
+        const bounds = L.latLngBounds([CA, CC, CB]);
+        map.fitBounds(bounds, { padding: [50, 50] });
+    }
+
+    function renderDelayed() {
+        if (activeLayer) map.removeLayer(activeLayer);
+        if (markerLayer) map.removeLayer(markerLayer);
+
+        activeLayer = L.layerGroup([
+            L.polyline([CB, CD], { color: COLORS.danger, weight: 4, dashArray: '5, 8' }),
+            L.polyline([CD, CC], { color: COLORS.warning, weight: 4, dashArray: '5, 8' })
+        ]).addTo(map);
+        markerLayer = L.marker(CD, { icon: createPulseGlowMarker(COLORS.danger) }).addTo(map);
+
+        const bounds = L.latLngBounds([CA, CC, CB, CD]);
+        map.fitBounds(bounds, { padding: [50, 50] });
+    }
+
+    renderNormal();
+
+    document.getElementById('simDelay').addEventListener('click', function () {
+        this.style.display = 'none';
+        document.getElementById('statusBanner').style.background = 'var(--status-danger-dim)';
+        document.getElementById('statusBanner').style.borderColor = 'var(--status-danger)';
+        document.getElementById('statusText').style.color = 'var(--status-danger)';
+        document.getElementById('statusText').textContent = 'DELAY & RE-ROUTING';
+
+        document.getElementById('timelineFeed').innerHTML += `
+            <div class="flex-col gap-2 mt-4" style="animation: fadeIn 0.5s">
+                <div class="flex-center gap-2" style="color: var(--status-danger)">
+                    <i data-lucide="alert-circle" style="width: 18px"></i> <span style="font-weight: 600">14:30 — Delay Detected</span>
+                </div>
+                <div style="color: var(--text-muted); font-size: 0.9rem; margin-left: 1.7rem">Accident reported. Re-routing via alternate...</div>
+            </div>
+        `;
+        lucide.createIcons();
+        renderDelayed();
+    });
+</script>
+{% endblock %}

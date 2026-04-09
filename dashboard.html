@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex-col gap-6">
+
+    <!-- Stat Cards Row -->
+    <div class="grid-cols-4">
+        <div class="card glow-hover">
+            <div class="flex-between mb-4">
+                <h3 style="color: var(--text-secondary)">Total Shipments</h3>
+                <i data-lucide="package" style="color: var(--accent-cyan)"></i>
+            </div>
+            <div style="font-size: 2rem; font-weight: 700">1,248</div>
+            <div style="font-size: 0.85rem; color: var(--status-success); margin-top: 0.5rem">+12% from last week</div>
+        </div>
+
+        <div class="card glow-hover">
+            <div class="flex-between mb-4">
+                <h3 style="color: var(--text-secondary)">On-Time Rate</h3>
+                <i data-lucide="check-circle" style="color: var(--status-success)"></i>
+            </div>
+            <div style="font-size: 2rem; font-weight: 700">82%</div>
+            <div style="font-size: 0.85rem; color: var(--status-warning); margin-top: 0.5rem">Below 90% target</div>
+        </div>
+
+        <div class="card glow-hover">
+            <div class="flex-between mb-4">
+                <h3 style="color: var(--text-secondary)">Active Alerts</h3>
+                <i data-lucide="alert-triangle" style="color: var(--status-danger)"></i>
+            </div>
+            <div style="font-size: 2rem; font-weight: 700">7</div>
+            <div style="font-size: 0.85rem; color: var(--status-danger); margin-top: 0.5rem">Requires immediate action
+            </div>
+        </div>
+
+        <div class="card glow-hover">
+            <div class="flex-between mb-4">
+                <h3 style="color: var(--text-secondary)">Avg ETA</h3>
+                <i data-lucide="clock" style="color: var(--accent-cyan)"></i>
+            </div>
+            <div style="font-size: 2rem; font-weight: 700">18 hrs</div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem">Across all modes</div>
+        </div>
+    </div>
+
+    <!-- Map Section -->
+    <div class="card" style="padding: 0; overflow: hidden; height: 400px; display: flex; flex-direction: column">
+        <div id="dashboardMap" style="height: 100%; width: 100%; background: #1a1f2b"></div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="card">
+        <h2 class="mb-4">Recent Shipments</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Mode</th>
+                        <th>Weight</th>
+                        <th>Priority</th>
+                        <th>ETA</th>
+                        <th>Risk</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="font-weight: 600; color: var(--accent-cyan)">SHP001</td>
+                        <td>Bangalore</td>
+                        <td>Delhi</td>
+                        <td>Road+Rail</td>
+                        <td>25kg</td>
+                        <td><span style="font-weight: 700" class="text-gradient">High</span></td>
+                        <td>18hrs</td>
+                        <td>12%</td>
+                        <td><span class="badge success">In Transit</span></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600; color: var(--accent-cyan)">SHP002</td>
+                        <td>Mumbai</td>
+                        <td>Chennai</td>
+                        <td>Air</td>
+                        <td>5kg</td>
+                        <td><span style="font-weight: 700" class="text-gradient">Urgent</span></td>
+                        <td>6hrs</td>
+                        <td>65%</td>
+                        <td><span class="badge danger">Delayed</span></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600; color: var(--accent-cyan)">SHP003</td>
+                        <td>Delhi</td>
+                        <td>Kolkata</td>
+                        <td>Rail</td>
+                        <td>80kg</td>
+                        <td style="font-weight: 500">Normal</td>
+                        <td>24hrs</td>
+                        <td>8%</td>
+                        <td><span class="badge success">On Track</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize Dashboard Map
+    const map = L.map('dashboardMap', { zoomControl: false }).setView([21.0, 78.0], 4.5);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CartoDB'
+    }).addTo(map);
+
+    const CITIES = {
+        Mumbai: [19.0760, 72.8777],
+        Delhi: [28.7041, 77.1025],
+        Bangalore: [12.9716, 77.5946],
+        Chennai: [13.0827, 80.2707],
+        Kolkata: [22.5726, 88.3639]
+    };
+
+    // Markers
+    L.marker(CITIES.Mumbai, { icon: createGlowMarker(COLORS.warning) }).addTo(map).bindPopup("<div style='color:#333'><b>Mumbai Hub</b><br>Status: Partial Delay</div>");
+    L.marker(CITIES.Delhi, { icon: createGlowMarker(COLORS.success) }).addTo(map).bindPopup("<div style='color:#333'><b>Delhi Hub</b><br>Status: Operational</div>");
+    L.marker(CITIES.Bangalore, { icon: createGlowMarker(COLORS.success) }).addTo(map).bindPopup("<div style='color:#333'><b>Bangalore Hub</b><br>Status: Operational</div>");
+    L.marker(CITIES.Chennai, { icon: createGlowMarker(COLORS.danger) }).addTo(map).bindPopup("<div style='color:#333'><b>Chennai Hub</b><br>Status: Weather Alert</div>");
+    L.marker(CITIES.Kolkata, { icon: createGlowMarker(COLORS.success) }).addTo(map).bindPopup("<div style='color:#333'><b>Kolkata Hub</b><br>Status: Operational</div>");
+
+    // Routes
+    L.polyline([CITIES.Bangalore, CITIES.Delhi], { color: COLORS.success, weight: 3, dashArray: '5, 10' }).addTo(map);
+    L.polyline([CITIES.Mumbai, CITIES.Chennai], { color: COLORS.danger, weight: 3, dashArray: '5, 10' }).addTo(map);
+    L.polyline([CITIES.Delhi, CITIES.Kolkata], { color: COLORS.success, weight: 3 }).addTo(map);
+    L.polyline([CITIES.Chennai, CITIES.Bangalore], { color: COLORS.warning, weight: 3, dashArray: '5, 10' }).addTo(map);
+</script>
+{% endblock %}

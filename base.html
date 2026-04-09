@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRACKSY Command Center</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <!-- Scripts CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        /* Add some specific overrides since we moved from React */
+        .flex-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .flex-between {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .flex-col {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .gap-2 {
+            gap: 0.5rem;
+        }
+
+        .gap-4 {
+            gap: 1rem;
+        }
+
+        .gap-6 {
+            gap: 1.5rem;
+        }
+
+        .mb-4 {
+            margin-bottom: 1rem;
+        }
+
+        .mt-4 {
+            margin-top: 1rem;
+        }
+
+        .lucide {
+            width: 1.2rem;
+            height: 1.2rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Navbar -->
+        <nav class="navbar">
+            <div class="flex-center gap-2">
+                <i data-lucide="rocket" style="color: var(--accent-cyan); width: 28px; height: 28px;"></i>
+                <h1 class="text-gradient" style="font-size: 1.5rem; font-weight: 700;">TRACKSY</h1>
+            </div>
+
+            <div class="nav-links">
+                <a href="/" class="nav-link flex-center gap-2" id="nav-dashboard"><i data-lucide="box"></i>
+                    Dashboard</a>
+                <a href="/plan" class="nav-link flex-center gap-2" id="nav-plan"><i data-lucide="map"></i> Plan
+                    Shipment</a>
+                <a href="/tracker" class="nav-link flex-center gap-2" id="nav-tracker"><i data-lucide="activity"></i>
+                    Live Tracker</a>
+                <a href="/optimizer" class="nav-link flex-center gap-2" id="nav-optimizer"><i
+                        data-lucide="settings-2"></i> Route Optimizer</a>
+                <a href="/analytics" class="nav-link flex-center gap-2" id="nav-analytics"><i
+                        data-lucide="bar-chart-2"></i> Analytics</a>
+                <a href="/alerts" class="nav-link flex-center gap-2" id="nav-alerts"><i data-lucide="bell"></i>
+                    Alerts</a>
+            </div>
+
+            <div class="ai-badge">
+                <div class="ai-status-dot"></div>
+                AI Active
+            </div>
+        </nav>
+
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- App Scripts -->
+    <script>
+        lucide.createIcons();
+
+        // Highlight active nav
+        window.onload = () => {
+            const path = window.location.pathname;
+            document.querySelectorAll('.nav-link').forEach(link => {
+                if (link.getAttribute('href') === path) {
+                    link.classList.add('active');
+                }
+            });
+        }
+    </script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex-col gap-6">
+
+    <!-- Top Input Form -->
+    <div class="card">
+        <h2 class="mb-4">Multi-Modal Route Optimizer</h2>
+        <form id="optForm" class="flex-between gap-6" style="align-items: flex-end">
+
+            <div class="flex-col gap-2" style="flex: 1">
+                <label>📍 Source City</label>
+                <input type="text" id="ro-source" value="Delhi" required />
+            </div>
+
+            <div class="flex-col gap-2" style="flex: 1">
+                <label>📍 Destination City</label>
+                <input type="text" id="ro-dest" value="Chennai" required />
+            </div>
+
+            <div class="flex-col gap-2" style="flex: 2">
+                <label>Transport Modes</label>
+                <div class="flex-center gap-4" style="justify-content: flex-start">
+                    <label class="flex-center gap-2"><input type="checkbox" id="modeRoad" checked /> Road</label>
+                    <label class="flex-center gap-2"><input type="checkbox" id="modeRail" checked /> Rail</label>
+                    <label class="flex-center gap-2"><input type="checkbox" id="modeAir" checked /> Air</label>
+                    <label class="flex-center gap-2"><input type="checkbox" id="modeWater" checked /> Water</label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-accent flex-center gap-2">
+                <i data-lucide="settings-2"></i> Compare Routes
+            </button>
+        </form>
+    </div>
+
+    <div id="resultsArea" style="display: none;" class="flex-col gap-6">
+
+        <!-- Cards -->
+        <div class="grid-cols-4" id="cardsGrid">
+            <!-- Populated via Javascript -->
+        </div>
+
+        <!-- Chart -->
+        <div class="card fade-in">
+            <h3 class="mb-4">Time vs Cost Comparison (Claude AI Analysis)</h3>
+            <div style="height: 350px; width: 100%">
+                <canvas id="compChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let chartInstance = null;
+
+    document.getElementById('optForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const source = document.getElementById('ro-source').value || 'Delhi';
+        const dest = document.getElementById('ro-dest').value || 'Chennai';
+
+        fetch('/api/predict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ source, destination: dest, weight: 50 })
+        })
+            .then(response => response.json())
+            .then(data => {
+                const MODES = [
+                    { id: 'modeRoad', name: 'Road Transit', icon: 'truck', eta: data.modes.road.eta, cost: data.modes.road.cost, distance: data.distance, risk: 'Medium', eff: 60, color: 'var(--accent-cyan)' },
+                    { id: 'modeRail', name: 'Rail Freight', icon: 'train', eta: data.modes.rail.eta, cost: data.modes.rail.cost, distance: data.distance, risk: 'Low', eff: 80, color: 'var(--status-success)' },
+                    { id: 'modeAir', name: 'Air Cargo', icon: 'plane', eta: data.modes.air.eta, cost: data.modes.air.cost, distance: data.distance, risk: 'Low', eff: 90, color: 'var(--status-warning)' },
+                    { id: 'modeWater', name: 'Coastal Shipping', icon: 'ship', eta: data.modes.water.eta, cost: data.modes.water.cost, distance: Math.floor(data.distance * 1.5), risk: 'Low', eff: 40, color: '#4a90e2' }
+                ];
+
+                const activeModes = MODES.filter(m => document.getElementById(m.id).checked);
+
+                const cardsHTML = activeModes.map(mode => `
+                <div class="card glow-hover fade-in flex-col gap-4">
+                    <div class="flex-between" style="color: ${mode.color}">
+                        <i data-lucide="${mode.icon}" style="width: 28px; height: 28px"></i>
+                        <span style="font-weight: 600">${mode.name}</span>
+                    </div>
+                    <div class="flex-col gap-2">
+                        <div class="flex-between"><span>ETA (hrs)</span> <strong>${mode.eta}</strong></div>
+                        <div class="flex-between"><span>Cost</span> <strong>₹${mode.cost.toLocaleString()}</strong></div>
+                        <div class="flex-between"><span>Distance</span> <strong>${mode.distance} km</strong></div>
+                        <div class="flex-between"><span>Risk</span> <strong>${mode.risk}</strong></div>
+                    </div>
+                    <div class="flex-col gap-2 mt-2">
+                        <div class="flex-between" style="font-size: 0.85rem"><span>Efficiency Index</span><span>${mode.eff}%</span></div>
+                        <div style="width: 100%; height: 6px; background: var(--bg-input); border-radius: 3px">
+                            <div style="width: ${mode.eff}%; height: 100%; background: ${mode.color}; border-radius: 3px"></div>
+                        </div>
+                    </div>
+                    <button class="btn-primary" style="margin-top: auto; width: 100%">Select Route</button>
+                </div>
+            `).join('');
+
+                document.getElementById('cardsGrid').innerHTML = cardsHTML;
+                lucide.createIcons();
+                document.getElementById('resultsArea').style.display = 'flex';
+
+                if (chartInstance) chartInstance.destroy();
+
+                const ctx = document.getElementById('compChart').getContext('2d');
+                chartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: activeModes.map(m => m.name),
+                        datasets: [
+                            { label: 'Time (Hours)', data: activeModes.map(m => m.eta), backgroundColor: '#00d4ff', yAxisID: 'y' },
+                            { label: 'Cost (k INR)', data: activeModes.map(m => m.cost / 1000), backgroundColor: '#00ff88', yAxisID: 'y1' }
+                        ]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, color: '#94a3b8',
+                        scales: {
+                            x: { ticks: { color: '#94a3b8' }, grid: { color: '#2e3b4e' } },
+                            y: { type: 'linear', position: 'left', ticks: { color: '#00d4ff' }, grid: { color: '#2e3b4e' } },
+                            y1: { type: 'linear', position: 'right', ticks: { color: '#00ff88' }, grid: { drawOnChartArea: false } }
+                        },
+                        plugins: { legend: { labels: { color: '#fff' } } }
+                    }
+                });
+            })
+            .catch(err => console.error("API error", err));
+    });
+</script>
+{% endblock %}
