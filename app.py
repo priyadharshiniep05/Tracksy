@@ -1,30 +1,49 @@
 from flask import Flask, render_template
+from flask_socketio import SocketIO
+from flask_cors import CORS
 
 app = Flask(__name__)
+app.config.from_object('config.Config')
+CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+
+# Import and register blueprints
+from routes.admin import admin_bp
+from routes.supplier import supplier_bp
+from routes.customer import customer_bp
+from routes.driver import driver_bp
+from routes.api import api_bp
+
+app.register_blueprint(admin_bp, url_prefix='/admin')
+app.register_blueprint(supplier_bp, url_prefix='/supplier')
+app.register_blueprint(customer_bp, url_prefix='/customer')
+app.register_blueprint(driver_bp, url_prefix='/driver')
+app.register_blueprint(api_bp, url_prefix='/api')
 
 @app.route('/')
-def dashboard():
-    return render_template('dashboard.html')
+def index():
+    return render_template('index.html')
 
-@app.route('/plan')
-def plan():
-    return render_template('plan_shipment.html')
+def background_tasks():
+    """Background simulator thread for advancing routes and checking delays."""
+    import eventlet
+    from services.ai_engine import check_for_delays, advance_vehicles
+    while True:
+        eventlet.sleep(15)
+        try:
+            with app.app_context():
+                advance_vehicles(socketio)
+                check_for_delays(socketio)
+        except Exception as e:
+            print(f"[Simulation Error] {e}")
 
-@app.route('/tracker')
-def tracker():
-    return render_template('live_tracker.html')
+@socketio.on('connect')
+def connect():
+    print('Client connected')
 
-@app.route('/optimizer')
-def optimizer():
-    return render_template('route_optimizer.html')
+@socketio.on('disconnect')
+def disconnect():
+    print('Client disconnected')
 
-@app.route('/analytics')
-def analytics():
-    return render_template('analytics.html')
-
-@app.route('/alerts')
-def alerts():
-    return render_template('alerts.html')
-
-if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=8080, debug=True)
+# Start background simulation
+socketio.start_background_task(background_tasks)
