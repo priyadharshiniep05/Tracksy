@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracksy - Global AI Command Center</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/custom.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    borderRadius: { '3xl': '1.5rem' },
+                    colors: {
+                        navy: { 700: '#1A4480', 800: '#0D3060', 900: '#0A2540', 950: '#050F1C' },
+                        teal: { 400: '#00EDE0', 500: '#00D4C8' },
+                        violet: { 400: '#7C75FF', 500: '#635BFF' },
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-navy-950 text-slate-100 min-h-screen bg-grid overflow-hidden">
+    <!-- Top Nav: Frosted Glass -->
+    <header class="h-16 GlassPanel rounded-none border-x-0 border-t-0 fixed top-0 w-full z-50 flex items-center justify-between px-8">
+        <div class="flex items-center space-x-4">
+            <h1 class="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-teal-500 to-violet-500 tracking-tighter">TRACKSY</h1>
+            <div class="h-6 w-[1px] bg-white/10 mx-4"></div>
+            <div class="flex items-center space-x-2 text-sm text-slate-400">
+                <i data-lucide="shield-check" class="w-4 h-4 text-teal-500"></i>
+                <span class="font-bold uppercase tracking-widest">Global Ops Command</span>
+            </div>
+        </div>
+        <div class="flex items-center space-x-6">
+            <div class="flex items-center space-x-2">
+                <span class="live-dot"></span>
+                <span class="text-xs font-bold text-teal-500 uppercase">System Live</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="p-2 hover:bg-white/5 rounded-lg transition-colors"><i data-lucide="bell" class="w-5 h-5"></i></button>
+                <button class="p-2 hover:bg-white/5 rounded-lg transition-colors"><i data-lucide="settings" class="w-5 h-5"></i></button>
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-violet-500 flex items-center justify-center font-bold">A</div>
+            </div>
+        </div>
+    </header>
+
+    <div id="disruptionBanner" class="hidden bg-red-600/90 backdrop-blur-md text-white px-4 py-2 fixed top-16 w-full z-40 flex items-center justify-between">
+        <div class="flex items-center">
+            <i data-lucide="alert-triangle" class="w-5 h-5 mr-3"></i>
+            <div>
+                <h4 id="disruptTitle" class="font-bold text-sm">Critical Alert</h4>
+                <p id="disruptDesc" class="text-xs text-red-100">Details</p>
+            </div>
+        </div>
+        <a href="/admin/disruptions" class="bg-white text-red-600 px-3 py-1 rounded-full text-xs font-bold hover:bg-red-50 transition-colors">Details</a>
+    </div>
+
+    <div class="flex h-screen pt-16" id="app-wrapper">
+        <!-- Sidebar: Secondary Navigation -->
+        <aside class="sidebar w-64 bg-navy-900 border-r border-white/5 flex flex-col h-full z-10 transition-transform">
+            <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+                <p class="px-4 pb-2 text-[10px] text-slate-500 uppercase tracking-tighter font-black">Fleet Command</p>
+                <a href="/admin/dashboard" class="group flex items-center px-4 py-2.5 rounded-xl hover:bg-white/5 transition-all text-sm font-bold">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-teal-500"></i> Dashboard
+                </a>
+                <a href="/admin/orders" class="group flex items-center px-4 py-2.5 rounded-xl hover:bg-white/5 transition-all text-sm font-bold">
+                    <i data-lucide="package" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-teal-500"></i> Orders
+                </a>
+                <a href="/admin/fleet" class="group flex items-center px-4 py-2.5 rounded-xl hover:bg-white/5 transition-all text-sm font-bold">
+                    <i data-lucide="truck" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-teal-500"></i> Fleet
+                </a>
+
+                <p class="px-4 pt-6 pb-2 text-[10px] text-slate-500 uppercase tracking-tighter font-black">AI & Logic</p>
+                <a href="/admin/route_optimizer" class="group flex items-center px-4 py-2.5 rounded-xl hover:bg-white/5 transition-all text-sm font-bold">
+                    <i data-lucide="map" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-violet-500"></i> Optimizer
+                </a>
+                <a href="/admin/analytics" class="group flex items-center px-4 py-2.5 rounded-xl hover:bg-white/5 transition-all text-sm font-bold">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-violet-500"></i> Analytics
+                </a>
+                <a href="/admin/digital_twin" class="group flex items-center px-4 py-2.5 rounded-xl hover:bg-white/5 transition-all text-sm font-bold">
+                    <i data-lucide="cpu" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-violet-500"></i> Digital Twin
+                </a>
+
+                <p class="px-4 pt-6 pb-2 text-[10px] text-slate-500 uppercase tracking-tighter font-black">Supply Chain</p>
+                <a href="/supplier/dashboard" class="group flex items-center px-4 py-2.5 rounded-xl hover:bg-white/5 transition-all text-sm font-bold">
+                    <i data-lucide="factory" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-teal-500"></i> Supplier Portal
+                </a>
+                <a href="/customer/track" class="group flex items-center px-4 py-2.5 rounded-xl hover:bg-white/5 transition-all text-sm font-bold">
+                    <i data-lucide="map-pin" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-teal-500"></i> Track
+                </a>
+                <a href="/driver/dashboard" class="group flex items-center px-4 py-2.5 rounded-xl hover:bg-white/5 transition-all text-sm font-bold">
+                    <i data-lucide="user" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-teal-500"></i> Driver
+                </a>
+            </nav>
+            <div class="p-4 border-t border-white/5">
+                <div class="GlassPanel p-4 rounded-2xl flex items-center space-x-3">
+                    <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <span class="text-[10px] font-black uppercase text-slate-400">Node: TRK-Global-01</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto p-8 relative">
+            <div class="max-w-7xl mx-auto">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.1/socket.io.js"></script>
+    
+    <script src="/static/js/multimodal_map.js"></script>
+    <script src="/static/js/animations.js"></script>
+    <script src="/static/js/realtime.js"></script>
+    
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

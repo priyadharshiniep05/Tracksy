@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-8">
+    <div class="text-center mb-12">
+        <h2 class="text-4xl font-black tracking-tighter uppercase mb-2">Initialize_Dispatch</h2>
+        <div class="flex justify-center gap-4 text-[10px] font-black uppercase tracking-widest text-slate-500">
+            <span class="flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3 text-teal-500"></i> Ledger: Secure</span>
+            <span class="flex items-center gap-1"><i data-lucide="cpu" class="w-3 h-3 text-violet-500"></i> Optimization: Live</span>
+        </div>
+    </div>
+    
+    <div class="GlassPanel p-12 border-white/10 glow-violet stagger-item">
+        <form id="newOrderForm" onsubmit="event.preventDefault(); submitOrder();">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 mb-12">
+                <!-- Customer Details -->
+                <div class="md:col-span-2">
+                    <h3 class="font-black text-xs uppercase tracking-[0.2em] mb-6 flex items-center gap-2 text-slate-400">
+                        <i data-lucide="user" class="w-4 h-4 text-teal-500"></i> PARTNER_CREDENTIALS
+                    </h3>
+                    <div class="relative">
+                        <i data-lucide="building-2" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                        <input type="text" id="custName" placeholder="ENTITY_NAME" class="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-xs font-black uppercase tracking-widest focus:outline-none focus:border-teal-500 transition-all placeholder:text-slate-600" required value="ACME_LOGISTICS_GRP">
+                    </div>
+                </div>
+
+                <!-- Locations -->
+                <div class="md:col-span-2">
+                    <h3 class="font-black text-xs uppercase tracking-[0.2em] mb-6 flex items-center gap-2 text-slate-400">
+                        <i data-lucide="navigation" class="w-4 h-4 text-violet-500"></i> VECTOR_ROUTING
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Origin -->
+                        <div class="space-y-4">
+                            <div class="relative">
+                                <i data-lucide="map-pin" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-teal-500/50"></i>
+                                <input type="text" id="originCity" placeholder="ORIGIN_NAME (e.g. Mumbai Hub)" class="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-xs font-black uppercase tracking-widest focus:outline-none focus:border-teal-500 transition-all" required value="MUMBAI_TERMINAL_A">
+                            </div>
+                            <div class="flex gap-4">
+                                <input type="number" step="any" id="originLat" placeholder="LAT" class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-[10px] font-mono font-bold focus:outline-none focus:border-white/20" required value="19.0760">
+                                <input type="number" step="any" id="originLng" placeholder="LNG" class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-[10px] font-mono font-bold focus:outline-none focus:border-white/20" required value="72.8777">
+                            </div>
+                        </div>
+
+                        <!-- Destination -->
+                        <div class="space-y-4">
+                            <div class="relative">
+                                <i data-lucide="target" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-violet-500/50"></i>
+                                <input type="text" id="destCity" placeholder="DEST_NAME (e.g. London Port)" class="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-xs font-black uppercase tracking-widest focus:outline-none focus:border-violet-500 transition-all" required value="LONDON_GATEWAY">
+                            </div>
+                            <div class="flex gap-4">
+                                <input type="number" step="any" id="destLat" placeholder="LAT" class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-[10px] font-mono font-bold focus:outline-none focus:border-white/20" required value="51.5074">
+                                <input type="number" step="any" id="destLng" placeholder="LNG" class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-[10px] font-mono font-bold focus:outline-none focus:border-white/20" required value="-0.1278">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logistics Specs -->
+                <div class="md:col-span-2">
+                    <h3 class="font-black text-xs uppercase tracking-[0.2em] mb-6 flex items-center gap-2 text-slate-400">
+                        <i data-lucide="package-search" class="w-4 h-4 text-blue-500"></i> CARGO_SPECIFICATIONS
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="relative">
+                            <i data-lucide="weight" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                            <input type="number" id="weight" placeholder="0.0 KG" class="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-xs font-mono font-bold focus:outline-none focus:border-white/20 transition-all" required value="15000">
+                        </div>
+                        <div class="relative">
+                            <i data-lucide="box" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                            <input type="number" id="volume" placeholder="0.0 CBM" class="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-xs font-mono font-bold focus:outline-none focus:border-white/20 transition-all" required value="20">
+                        </div>
+                        <div class="relative">
+                            <i data-lucide="zap" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                            <select id="priority" class="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-xs font-black uppercase tracking-widest focus:outline-none appearance-none cursor-pointer hover:bg-white/10 transition-all">
+                                <option value="standard">STANDARD_PRI</option>
+                                <option value="urgent">URGENT_PRI</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-teal-500 to-violet-500 text-navy-950 font-black py-5 rounded-2xl text-xs uppercase tracking-[0.2em] hover:glow-teal transition-all flex items-center justify-center gap-3">
+                <i data-lucide="server" class="w-4 h-4"></i> COMMENCE_AUTOPILOT_DISPATCH
+            </button>
+        </form>
+    </div>
+
+    <!-- Optimization Result -->
+    <div id="resultCard" class="mt-8 GlassPanel p-12 border-teal-500/30 glow-teal hidden text-center relative overflow-hidden">
+        <div class="absolute -right-10 -bottom-10 opacity-5">
+            <i data-lucide="check-circle-2" class="w-48 h-48 text-teal-400"></i>
+        </div>
+        
+        <div class="relative z-10">
+            <div class="w-16 h-16 bg-teal-500/10 rounded-full flex items-center justify-center mx-auto mb-6 text-teal-500">
+                <i data-lucide="check" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-3xl font-black mb-2 uppercase tracking-tighter">DISPATCH_LOCKED</h3>
+            <p class="text-slate-400 font-bold uppercase text-[10px] tracking-widest mb-10">Protocol optimized and synced to global ledger.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-lg mx-auto mb-10">
+                <div class="bg-white/5 border border-white/10 rounded-2xl p-6">
+                    <div class="text-[9px] text-slate-500 font-black uppercase tracking-widest mb-1">SYSTEM_ID</div>
+                    <div class="font-mono text-teal-400 font-black text-sm" id="resTrack">-</div>
+                </div>
+                <div class="bg-white/5 border border-white/10 rounded-2xl p-6">
+                    <div class="text-[9px] text-slate-500 font-black uppercase tracking-widest mb-1">PROJECTED_ARRIVAL</div>
+                    <div class="font-mono text-slate-100 font-black text-sm uppercase" id="resEta">-</div>
+                </div>
+            </div>
+            
+            <a id="trackLink" href="#" class="inline-flex items-center gap-2 py-3 px-8 GlassPanel rounded-xl hover:bg-white/5 transition-all text-xs font-black uppercase tracking-widest group">
+                LIVE_SENSORY_FEED <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    lucide.createIcons();
+
+    function submitOrder() {
+        const btn = document.getElementById('submitBtn');
+        btn.innerHTML = '<span class="live-dot mr-2"></span> SYNCING_LEDGER...';
+        btn.disabled = true;
+
+        fetch('/api/orders/new', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                customer_name: document.getElementById('custName').value,
+                origin_city: document.getElementById('originCity').value,
+                dest_city: document.getElementById('destCity').value,
+                origin_lat: document.getElementById('originLat').value,
+                origin_lng: document.getElementById('originLng').value,
+                dest_lat: document.getElementById('destLat').value,
+                dest_lng: document.getElementById('destLng').value,
+                weight_kg: document.getElementById('weight').value,
+                volume_cbm: document.getElementById('volume').value,
+                priority: document.getElementById('priority').value
+            })
+        }).then(r=>r.json()).then(data => {
+            if(data.error) {
+                alert("SYSTEM_REJECTION: " + data.error);
+                btn.disabled = false;
+                btn.innerText = "RE_INITIATE_DISPATCH";
+                return;
+            }
+            document.getElementById('newOrderForm').closest('.GlassPanel').style.display = 'none';
+            document.getElementById('resultCard').classList.remove('hidden');
+            document.getElementById('resTrack').innerText = data.tracking_id;
+            document.getElementById('resEta').innerText = data.eta;
+            document.getElementById('trackLink').href = `/customer/track?id=${data.tracking_id}`;
+            anime({ targets: '#resultCard', translateY: [20, 0], opacity: [0, 1], duration: 1000, easing: 'easeOutElastic(1, .8)' });
+            lucide.createIcons();
+        }).catch(err => {
+            alert("COMMAND_ERROR: Connection failed.");
+            btn.disabled = false;
+        });
+    }
+</script>
+{% endblock %}

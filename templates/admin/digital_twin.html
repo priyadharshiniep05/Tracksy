@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex flex-col md:flex-row md:items-end justify-between mb-8">
+        <div>
+            <h2 class="text-4xl font-black tracking-tight mb-2 uppercase">Neural Digital Twin</h2>
+            <div class="flex gap-4 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                <span class="flex items-center gap-1"><i data-lucide="layout" class="w-3 h-3 text-violet-500"></i> Simulation Fidelity: Ultra</span>
+                <span class="flex items-center gap-1"><i data-lucide="database" class="w-3 h-3 text-teal-500"></i> Historical Dataset: Active</span>
+            </div>
+        </div>
+        
+        <div class="flex gap-2 mt-4 md:mt-0">
+            <span class="px-3 py-1 bg-violet-500/10 text-violet-500 rounded-full border border-violet-500/20 text-[10px] font-bold uppercase tracking-wider">Engine: Digital_Copy_v4.2</span>
+        </div>
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-8 relative z-20">
+        <!-- Control Panel -->
+        <div class="w-full lg:w-96 GlassPanel p-8 h-fit z-20 border-white/10 glow-violet">
+            <h3 class="font-black text-xs uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
+                <i data-lucide="settings" class="w-4 h-4 text-violet-500"></i> TWIN_CONFIG
+            </h3>
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Target_Entity</label>
+                    <div class="relative">
+                        <i data-lucide="box" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-teal-500/50"></i>
+                        <select id="dt-order" class="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs font-black uppercase appearance-none cursor-pointer focus:outline-none focus:border-teal-500 transition-all">
+                            <option value="TRK-2025-ABCD">ORDER: TRK-2025-ABCD</option>
+                            <option value="TRK-2025-EFGH">ORDER: TRK-2025-EFGH</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Scenario_Injection</label>
+                    <div class="relative">
+                        <i data-lucide="zap" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-rose-500/50"></i>
+                        <select id="dt-scenario" class="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs font-black uppercase appearance-none cursor-pointer focus:outline-none focus:border-rose-500 transition-all">
+                            <option value="weather_storm">WEATHER_STORM_OMEGA</option>
+                            <option value="vehicle_breakdown">HARDWARE_FAILURE_MOD-8</option>
+                            <option value="port_closure">PORT_ACCESS_DENIED</option>
+                            <option value="strike">LABOR_FORCE_DISRUPTION</option>
+                            <option value="demand_surge">ANOMALOUS_DEMAND_PEAK</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="runSimBtn" onclick="runDigitalTwinSimulation(document.getElementById('dt-order').value, document.getElementById('dt-scenario').value)" class="w-full mt-10 bg-gradient-to-r from-teal-500 to-violet-500 hover:glow-teal text-navy-950 font-black text-xs uppercase tracking-widest py-4 rounded-xl transition-all flex items-center justify-center gap-2">
+                <i data-lucide="play-circle" class="w-4 h-4"></i> EXECUTE_TWIN
+            </button>
+        </div>
+
+        <!-- Simulation Feedback -->
+        <div id="simResults" class="flex-1 hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="GlassPanel p-8 border-white/5 group">
+                    <div class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">P50_ETA_CONFIDENCE</div>
+                    <div class="text-3xl font-black font-mono text-slate-100" id="p50eta">-</div>
+                    <div class="mt-4 h-1 bg-white/5 rounded-full overflow-hidden">
+                        <div class="h-full bg-teal-500 w-[85%]"></div>
+                    </div>
+                </div>
+                
+                <div class="GlassPanel p-8 border-rose-500/20 group glow-rose">
+                    <div class="text-[9px] font-black text-rose-500 uppercase tracking-widest mb-1">P95_RISK_THRESHOLD</div>
+                    <div class="text-3xl font-black font-mono text-rose-500" id="p95eta">-</div>
+                    <div class="mt-4 flex items-center gap-2">
+                        <i data-lucide="alert-triangle" class="w-3 h-3 text-rose-500"></i>
+                        <span class="text-[9px] font-black text-rose-500/70 uppercase">High Latency Warning</span>
+                    </div>
+                </div>
+
+                <div class="GlassPanel p-8 border-white/5 col-span-1 md:col-span-2">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="text-[9px] font-black text-slate-500 uppercase tracking-widest">COST_IMPACT_ANALYSIS</div>
+                        <div class="text-2xl font-black font-mono text-amber-500" id="costImpact">-</div>
+                    </div>
+                    <div class="flex gap-1 h-2">
+                        <div class="flex-1 bg-teal-500/20 rounded-l-full"></div>
+                        <div class="flex-1 bg-teal-500/40"></div>
+                        <div class="flex-1 bg-amber-500/60 rounded-r-full"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="GlassPanel p-8 border-teal-500/20 glow-teal relative overflow-hidden">
+                <div class="relative z-10">
+                    <h4 class="font-black text-xs uppercase tracking-[0.2em] mb-4 flex items-center gap-2 text-teal-500">
+                        <i data-lucide="brain" class="w-4 h-4"></i> NEURAL_ADVISORY_PROTOCOL
+                    </h4>
+                    <p class="text-teal-100 font-mono text-sm leading-relaxed" id="recommendation">-</p>
+                </div>
+                <div class="absolute -right-4 -bottom-4 opacity-5">
+                    <i data-lucide="cpu" class="w-32 h-32 text-teal-300"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Initial Placeholder -->
+        <div id="dt-placeholder" class="flex-1 flex flex-col items-center justify-center p-20 GlassPanel border-dashed border-white/10 opacity-30">
+            <i data-lucide="activity" class="w-16 h-16 text-slate-500 mb-6 pulse-teal"></i>
+            <p class="font-black text-xs uppercase tracking-widest text-slate-500">Awaiting Twin Initialization...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+    // Wrap the results display logic
+    const originalRunSim = runDigitalTwinSimulation;
+    window.runDigitalTwinSimulation = (o, s) => {
+        document.getElementById('dt-placeholder').classList.add('hidden');
+        document.getElementById('simResults').classList.remove('hidden');
+        originalRunSim(o, s);
+        lucide.createIcons();
+        staggerEntranceAnimation('#simResults > div', 100);
+    }
+</script>
+{% endblock %}

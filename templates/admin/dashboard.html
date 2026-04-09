@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex flex-col md:flex-row md:items-end justify-between mb-8">
+        <div>
+            <h2 class="text-4xl font-black tracking-tight mb-2">OPERATIONS COMMAND</h2>
+            <div class="flex gap-4 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                <span class="flex items-center gap-1"><i data-lucide="radio" class="w-3 h-3 text-teal-500 animate-pulse"></i> Sensor Network: Online</span>
+                <span class="flex items-center gap-1"><i data-lucide="database" class="w-3 h-3 text-violet-500"></i> Distributed Ledger: Syncing</span>
+            </div>
+        </div>
+        
+        <div class="flex gap-2 mt-4 md:mt-0">
+            <span class="px-3 py-1 bg-teal-500/10 text-teal-500 rounded-full border border-teal-500/20 text-[10px] font-bold uppercase tracking-wider">Weather: Simulated</span>
+            <span class="px-3 py-1 bg-violet-500/10 text-violet-500 rounded-full border border-violet-500/20 text-[10px] font-bold uppercase tracking-wider">AI Core: Optimized</span>
+        </div>
+    </div>
+
+    <!-- KPI Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8 stagger-item">
+        <div class="GlassPanel p-6 relative overflow-hidden group">
+            <div class="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <i data-lucide="package" class="w-20 h-20 text-white"></i>
+            </div>
+            <div class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Active Orders</div>
+            <div class="text-3xl font-black" id="kpi-active">0</div>
+        </div>
+        <div class="GlassPanel p-6 relative overflow-hidden group">
+            <div class="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <i data-lucide="activity" class="w-20 h-20 text-white"></i>
+            </div>
+            <div class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Utilization</div>
+            <div class="text-3xl font-black" id="kpi-util">0%</div>
+        </div>
+        <div class="GlassPanel p-6 relative overflow-hidden group">
+            <div class="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <i data-lucide="clock" class="w-20 h-20 text-white"></i>
+            </div>
+            <div class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">On-Time Rate</div>
+            <div class="text-3xl font-black text-teal-500" id="kpi-ontime">0%</div>
+        </div>
+        <div class="GlassPanel p-6 relative overflow-hidden group">
+            <div class="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <i data-lucide="dollar-sign" class="w-20 h-20 text-white"></i>
+            </div>
+            <div class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Revenue</div>
+            <div class="text-3xl font-black" id="kpi-rev">$0</div>
+        </div>
+        <div class="GlassPanel p-6 relative overflow-hidden group">
+            <div class="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <i data-lucide="leaf" class="w-20 h-20 text-white"></i>
+            </div>
+            <div class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">CO₂ Offset</div>
+            <div class="text-3xl font-black text-emerald-500" id="kpi-co2">0kg</div>
+        </div>
+        <div class="GlassPanel p-6 relative overflow-hidden group border-amber-500/20">
+            <div class="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <i data-lucide="shield-alert" class="w-20 h-20 text-white"></i>
+            </div>
+            <div class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Risk Index</div>
+            <div class="text-3xl font-black text-amber-500" id="kpi-risk">0.0</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-8 stagger-item">
+        <!-- Global Live Map -->
+        <div class="lg:col-span-3 GlassPanel p-1 relative overflow-hidden">
+            <div id="global-map" class="map-full"></div>
+            <div class="absolute top-4 left-16 z-[1000] flex gap-2">
+                <div class="GlassPanel px-3 py-1.5 rounded-full flex items-center space-x-2 border-white/10">
+                    <span class="live-dot w-2 h-2"></span>
+                    <span class="text-[10px] font-black uppercase text-white/70">Real-Time Telemetry</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Live Telemetry & AI Feed -->
+        <div class="lg:col-span-1 flex flex-col gap-6">
+            <div class="GlassPanel p-6 relative overflow-hidden flex-1 flex flex-col">
+                <h3 class="font-black text-xs uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                    <i data-lucide="terminal" class="w-4 h-4 text-teal-500"></i> SYSTEM_LOG
+                </h3>
+                <div id="telemetry-log" class="telemetry-feed flex-1">
+                    <div class="telemetry-entry"><span class="telemetry-time">[BOOT]</span> Initializing Ops Command...</div>
+                    <div class="telemetry-entry"><span class="telemetry-time">[SYST]</span> Geo-Spacial Engine Online</div>
+                    <div class="telemetry-entry"><span class="telemetry-time">[SYST]</span> Blockchain Ledger Verified</div>
+                </div>
+            </div>
+
+            <div class="GlassPanel p-6 relative overflow-hidden glow-violet border-violet-500/20">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-black text-xs uppercase tracking-[0.2em] flex items-center gap-2">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-violet-500"></i> AI_INSIGHT
+                    </h3>
+                    <div class="flex space-x-1">
+                        <span class="w-1.5 h-1.5 bg-violet-500 rounded-full animate-pulse"></span>
+                        <span class="w-1.5 h-1.5 bg-violet-500 rounded-full animate-pulse" style="animation-delay: 0.2s"></span>
+                    </div>
+                </div>
+                <p id="ai-insight-text" class="text-sm text-slate-300 font-medium leading-relaxed italic">Synthesizing global logistics patterns...</p>
+                <div class="mt-6 pt-4 border-t border-white/5 flex items-center justify-between">
+                    <span class="text-[10px] font-black text-slate-500 uppercase">Confidence: <span class="text-teal-500">92%</span></span>
+                    <i data-lucide="brain-circuit" class="w-4 h-4 text-violet-500/50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize Admin Dashboard Map
+    const map = L.map('global-map', { zoomControl: false }).setView([20, 0], 2);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CARTO'
+    }).addTo(map);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    staggerEntranceAnimation('.stagger-item', 150);
+
+    const telemetryLog = document.getElementById('telemetry-log');
+    function addLog(type, message) {
+        const entry = document.createElement('div');
+        entry.className = 'telemetry-entry';
+        const time = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        entry.innerHTML = `<span class="telemetry-time">[${time}]</span> <span class="text-slate-400 font-bold">[${type}]</span> ${message}`;
+        telemetryLog.prepend(entry);
+        if (telemetryLog.children.length > 50) telemetryLog.lastElementChild.remove();
+    }
+
+    // Fetch initial KPIs
+    fetch('/api/analytics/kpis').then(r => r.json()).then(data => {
+        animateCounter(document.getElementById('kpi-active'), data.active_orders);
+        animateCounter(document.getElementById('kpi-util'), data.fleet_utilization_pct, 1500, '', '%');
+        animateCounter(document.getElementById('kpi-ontime'), data.on_time_rate, 1500, '', '%');
+        animateCounter(document.getElementById('kpi-rev'), data.revenue_today_usd, 1500, '$');
+        animateCounter(document.getElementById('kpi-co2'), data.co2_saved_kg, 1500, '', 'kg');
+        animateCounter(document.getElementById('kpi-risk'), data.disruption_risk_index, 1500);
+        addLog('SYST', `KPI Sync Complete: ${data.active_orders} Active Routes Identified`);
+    });
+
+    // Fetch Insights
+    fetch('/api/ai/insights').then(r => r.json()).then(data => {
+        if(data[0]) {
+            document.getElementById('ai-insight-text').innerText = data[0].insight_text;
+            addLog('AIOX', 'New Optimization Insight Received');
+        }
+    });
+
+    // Handle map updates
+    let markers = {};
+    fetch('/api/live_positions').then(r => r.json()).then(orders => {
+        orders.forEach(o => {
+            const m = L.marker([o.current_lat, o.current_lng], {
+                icon: createTransportIcon(o.transport_mode, 0)
+            }).bindPopup(`<b>Order ${o.id}</b><br>Mode: ${o.transport_mode}<br>Status: ${o.status}`).addTo(map);
+            markers[o.id] = m;
+        });
+    });
+
+    window.addEventListener('trackingUpdate', (e) => {
+        const data = e.detail;
+        if(markers[data.order_id]) {
+            smoothMoveMarker(markers[data.order_id], [markers[data.order_id].getLatLng().lat, markers[data.order_id].getLatLng().lng], [data.lat, data.lng], 1000);
+            if (Math.random() > 0.9) {
+                addLog('TRAC', `PosUpdate: ${data.order_id.substring(0,8)}... -> ${data.lat.toFixed(2)}, ${data.lng.toFixed(2)}`);
+            }
+        }
+    });
+
+    window.addEventListener('disruptionAlert', (e) => {
+        const data = e.detail;
+        addLog('CRIT', `DISRUPTION_DETECTION: ${data.title}`);
+    });
+
+    // Create custom transport icons for Leaflet using the teal theme
+    function createTransportIcon(mode, angle) {
+        let iconHtml = '';
+        if(mode === 'road') iconHtml = '<i data-lucide="truck" class="text-teal-500 w-6 h-6 drop-shadow-[0_0_5px_rgba(0,212,200,0.8)]"></i>';
+        else if(mode === 'air') iconHtml = '<i data-lucide="plane" class="text-violet-500 w-6 h-6 drop-shadow-[0_0_5px_rgba(99,91,255,0.8)]"></i>';
+        else if(mode === 'sea') iconHtml = '<i data-lucide="ship" class="text-blue-500 w-6 h-6 drop-shadow-[0_0_5px_rgba(59,130,246,0.8)]"></i>';
+        else iconHtml = '<i data-lucide="train" class="text-amber-500 w-6 h-6 drop-shadow-[0_0_5px_rgba(245,158,11,0.8)]"></i>';
+        
+        return L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div style="transform: rotate(${angle}deg)">${iconHtml}</div>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+        });
+    }
+
+    // Initialize Lucide icons on dynamic elements
+    setTimeout(() => lucide.createIcons(), 500);
+</script>
+{% endblock %}
