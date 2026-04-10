@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Tracksy{% endblock %} — AI Logistics</title>
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="/static/css/tracksy.css">
+    {% block head %}{% endblock %}
+</head>
+<body class="bg-navy text-white min-h-screen flex">
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 bg-slate flex-col hidden md:flex border-r border-white/5">
+        <div class="p-6">
+            <h1 class="text-2xl font-bold text-teal flex items-center gap-2">
+                <span>🚚</span> Tracksy
+            </h1>
+        </div>
+        <nav class="flex-1 px-4 space-y-2 mt-4">
+            <a href="/admin/dashboard" class="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition admin-only">
+                <span>📊</span> Dashboard
+            </a>
+            <a href="/admin/orders" class="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition admin-only">
+                <span>📦</span> Orders
+            </a>
+            <a href="/admin/fleet" class="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition admin-only">
+                <span>🚛</span> Fleet
+            </a>
+            <a href="/admin/analytics" class="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition admin-only">
+                <span>📈</span> Analytics
+            </a>
+            
+            <a href="/supplier/dashboard" class="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition supplier-only">
+                <span>🏠</span> Home
+            </a>
+            <a href="/supplier/new-order" class="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition supplier-only">
+                <span>➕</span> New Order
+            </a>
+
+            <a href="/driver/dashboard" class="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition driver-only">
+                <span>🛣️</span> Assigned Orders
+            </a>
+        </nav>
+        <div class="p-4 border-t border-white/5">
+            <button onclick="Tracksy.logout()" class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-danger/20 text-danger transition">
+                <span>🚪</span> Logout
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-h-screen">
+        <!-- Topbar -->
+        <header class="h-16 border-b border-white/5 flex items-center justify-between px-6 bg-navy/80 backdrop-blur-md sticky top-0 z-50">
+            <div class="flex items-center gap-4">
+                <button id="sidebar-toggle" class="md:hidden text-2xl">☰</button>
+                <h2 class="text-lg font-semibold">{% block page_title %}{% endblock %}</h2>
+            </div>
+            
+            <div class="flex items-center gap-6">
+                <!-- Disruption Status Dot -->
+                <div class="flex items-center gap-2 text-xs text-text-2">
+                    <span id="ws-status-dot" class="w-2 h-2 rounded-full bg-danger"></span>
+                    Live
+                </div>
+                
+                <button onclick="SimulationEngine.toggle()" id="btn-simulation" class="text-xs px-3 py-1 rounded-full border border-teal text-teal hover:bg-teal/10 transition">
+                    Demo Mode: OFF
+                </button>
+
+                <div class="flex items-center gap-3 border-l border-white/10 pl-6">
+                    <div class="text-right">
+                        <div id="user-name" class="text-sm font-medium">Loading...</div>
+                        <div id="user-role" class="text-xs text-teal uppercase tracking-widest">Role</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div id="disruption-banner"></div>
+
+        <section class="p-6 flex-1 fade-in">
+            {% block content %}{% endblock %}
+        </section>
+    </main>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-[9999]"></div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/static/js/core.js"></script>
+    <script src="/static/js/map.js"></script>
+    <script src="/static/js/websocket.js"></script>
+    <script src="/static/js/simulation.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const role = localStorage.getItem('tracksy_role');
+            if (role) {
+                document.getElementById('user-role').innerText = role;
+                document.body.classList.add(`role-${role}`);
+                
+                // RBAC UI Filtering
+                document.querySelectorAll(role === 'admin' ? '.admin-only' : 
+                          role === 'supplier' ? '.supplier-only' : 
+                          role === 'driver' ? '.driver-only' : '').forEach(el => el.classList.remove('hidden'));
+                
+                // Fetch me
+                try {
+                    const me = await Tracksy.fetch('/auth/me');
+                    document.getElementById('user-name').innerText = me.full_name;
+                } catch (e) {}
+
+                // Connect WS
+                wsClient.connect(role);
+            }
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

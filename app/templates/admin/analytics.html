@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Dashboard{% endblock %}
+{% block page_title %}Operational Intelligence{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- Delay Trends -->
+    <div class="bg-slate rounded-2xl border border-white/5 p-6 shadow-xl">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="font-semibold text-lg flex items-center gap-2"><span>📉</span> Delay Trends (Last 7 Days)</h3>
+            <button class="text-xs text-teal hover:underline">Export CSV</button>
+        </div>
+        <div class="h-64">
+            <canvas id="chart-delay-trends"></canvas>
+        </div>
+    </div>
+
+    <!-- Cost Breakdown -->
+    <div class="bg-slate rounded-2xl border border-white/5 p-6 shadow-xl">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="font-semibold text-lg flex items-center gap-2"><span>💰</span> Cost Distribution by Mode</h3>
+            <button class="text-xs text-teal hover:underline">Download PNG</button>
+        </div>
+        <div class="h-64">
+            <canvas id="chart-cost-breakdown"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Carbon Stats -->
+    <div class="bg-slate rounded-2xl border border-white/5 p-6 shadow-xl md:col-span-1">
+        <h3 class="font-semibold mb-6 flex items-center gap-2"><span>🌿</span> Carbon Footprint</h3>
+        <div class="h-48 relative">
+            <canvas id="chart-carbon"></canvas>
+        </div>
+        <div class="mt-6 space-y-3">
+            <div class="flex justify-between text-xs">
+                <span class="text-text-2">Total Emissions</span>
+                <span id="carbon-total" class="font-bold">0 kg</span>
+            </div>
+            <div class="flex justify-between text-xs">
+                <span class="text-text-2">Trees Equivalent</span>
+                <span id="carbon-trees" class="font-bold text-success">0</span>
+            </div>
+            <div class="bg-success/10 p-3 rounded-lg border border-success/20 mt-4">
+                <p class="text-[10px] text-success font-medium">Eco-route optimizations saved 3.4 tonnes of CO2 this month! 🌲</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ML Performance -->
+    <div class="bg-slate rounded-2xl border border-white/5 p-6 shadow-xl md:col-span-2">
+        <h3 class="font-semibold mb-6 flex items-center gap-2"><span>🧠</span> AI Model Accuracy</h3>
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-white/5 p-4 rounded-xl">
+                <div class="text-[10px] text-text-2 uppercase tracking-widest mb-1">ETA Precision</div>
+                <div class="text-3xl font-bold text-teal">92.4%</div>
+            </div>
+            <div class="bg-white/5 p-4 rounded-xl">
+                <div class="text-[10px] text-text-2 uppercase tracking-widest mb-1">Learning Epochs</div>
+                <div class="text-3xl font-bold text-info">1,248</div>
+            </div>
+        </div>
+        <div class="space-y-4">
+            <div class="text-xs text-text-2">Predictive Confidence by Route Type</div>
+            <div class="space-y-2">
+                <div>
+                    <div class="flex justify-between text-[10px] mb-1"><span>Domestic Road</span><span>98%</span></div>
+                    <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                        <div class="bg-teal h-full" style="width: 98%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-[10px] mb-1"><span>International Air</span><span>89%</span></div>
+                    <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                        <div class="bg-info h-full" style="width: 89%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-[10px] mb-1"><span>Multimodal Mixed</span><span>74%</span></div>
+                    <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                        <div class="bg-warn h-full" style="width: 74%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/charts.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Load Analytics Data
+        const delayData = await Tracksy.fetch('/analytics/delay-trends');
+        const costData = await Tracksy.fetch('/analytics/cost-breakdown');
+        const carbonData = await Tracksy.fetch('/analytics/carbon');
+
+        // Initialize Charts
+        ChartManager.initDelayTrends('chart-delay-trends', delayData);
+        ChartManager.initCostBreakdown('chart-cost-breakdown', costData);
+        ChartManager.initCarbonStats('chart-carbon', carbonData.breakdown);
+
+        // Update Text Stats
+        document.getElementById('carbon-total').innerText = `${carbonData.total_kg.toLocaleString()} kg`;
+        document.getElementById('carbon-trees').innerText = `${carbonData.trees_equivalent}`;
+    });
+</script>
+{% endblock %}

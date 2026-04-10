@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+{% block page_title %}Control Center{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="kpi-card bg-slate p-6 rounded-2xl border border-white/5">
+        <div class="text-text-2 text-xs uppercase tracking-widest mb-1">Active Shipments</div>
+        <div class="text-3xl font-bold flex items-center justify-between">
+            <span class="counter" id="kpi-active" data-target="0">0</span>
+            <span class="text-success text-xs font-normal">↑ 12%</span>
+        </div>
+    </div>
+    <div class="kpi-card bg-slate p-6 rounded-2xl border border-white/5" style="border-left-color: var(--info)">
+        <div class="text-text-2 text-xs uppercase tracking-widest mb-1">On-Time Rate</div>
+        <div class="text-3xl font-bold flex items-center justify-between">
+            <span class="counter" id="kpi-ontime" data-target="0">0</span>%
+            <span class="text-teal text-xs font-normal">Eco Optimal</span>
+        </div>
+    </div>
+    <div class="kpi-card bg-slate p-6 rounded-2xl border border-white/5" style="border-left-color: var(--warn)">
+        <div class="text-text-2 text-xs uppercase tracking-widest mb-1">Today's Cost</div>
+        <div class="text-3xl font-bold flex items-center justify-between">
+            $<span class="counter" id="kpi-cost" data-target="0">0</span>
+            <span class="text-text-2 text-xs font-normal">USD</span>
+        </div>
+    </div>
+    <div class="kpi-card bg-slate p-6 rounded-2xl border border-white/5" style="border-left-color: var(--danger)">
+        <div class="text-text-2 text-xs uppercase tracking-widest mb-1">Pending Alerts</div>
+        <div class="text-3xl font-bold flex items-center justify-between">
+            <span class="counter" id="kpi-alerts" data-target="0">0</span>
+            <span class="flex h-2 w-2 rounded-full bg-danger"></span>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Map Section -->
+    <div class="lg:col-span-2 space-y-6">
+        <div class="bg-slate rounded-2xl border border-white/5 overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-white/5 flex items-center justify-between">
+                <h3 class="font-semibold flex items-center gap-2"><span>🌍</span> Live Fleet Map</h3>
+                <div class="flex gap-2">
+                    <span class="text-[10px] px-2 py-1 bg-teal/20 text-teal rounded">Road</span>
+                    <span class="text-[10px] px-2 py-1 bg-info/20 text-info rounded">Air</span>
+                    <span class="text-[10px] px-2 py-1 bg-slate/50 text-text-2 rounded">Sea</span>
+                </div>
+            </div>
+            <div id="live-fleet-map" class="h-[450px] w-full"></div>
+        </div>
+
+        <div class="bg-slate rounded-2xl border border-white/5 overflow-hidden">
+            <div class="p-4 border-b border-white/5 flex items-center justify-between">
+                <h3 class="font-semibold">Recent Shipments</h3>
+                <a href="/admin/orders" class="text-xs text-teal hover:underline">View All &rarr;</a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-white/5 text-text-2 uppercase text-[10px] tracking-widest">
+                        <tr>
+                            <th class="p-4">ID</th>
+                            <th class="p-4">Origin &rarr; Destination</th>
+                            <th class="p-4">Status</th>
+                            <th class="p-4">Mode</th>
+                            <th class="p-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-orders-table">
+                        <!-- Dynamic Rows -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="space-y-6">
+        <div class="bg-slate rounded-2xl border border-white/5 p-6 shadow-xl">
+            <h3 class="font-semibold mb-4 flex items-center gap-2"><span>⚠️</span> Disruption Control</h3>
+            <p class="text-xs text-text-2 mb-6">Trigger simulation events to test AI re-routing and real-time alerts.</p>
+            <button onclick="SimulationEngine.triggerDisruption()" class="w-full bg-danger/10 hover:bg-danger text-danger hover:text-white border border-danger p-3 rounded-lg font-bold transition flex items-center justify-center gap-2">
+                Simulate Disruption
+            </button>
+        </div>
+
+        <div class="bg-slate rounded-2xl border border-white/5 p-6 shadow-xl">
+            <h3 class="font-semibold mb-4">Collaborative Logistics</h3>
+            <div class="space-y-4" id="capacity-sharing-list">
+                <div class="p-3 bg-white/5 rounded-lg border border-white/5">
+                    <div class="text-xs text-teal font-bold mb-1">Capacity Share Available</div>
+                    <p class="text-[11px] text-text-2">Truck MH-04-AB has 1,800kg free space on Mumbai→Delhi route.</p>
+                    <button class="mt-2 text-[10px] bg-teal text-navy px-2 py-1 rounded font-bold">Combine Orders</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-slate rounded-2xl border border-white/5 p-6 shadow-xl">
+            <h3 class="font-semibold mb-4">Pending Alerts</h3>
+            <div class="space-y-4" id="mini-alert-feed">
+                <!-- Alerts -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Initialize Map
+        mapManager.init();
+
+        // Load KPIs
+        const summary = await Tracksy.fetch('/analytics/summary');
+        document.getElementById('kpi-active').setAttribute('data-target', summary.active_shipments);
+        document.getElementById('kpi-ontime').setAttribute('data-target', summary.on_time_rate);
+        document.getElementById('kpi-cost').setAttribute('data-target', summary.total_cost_today);
+        document.getElementById('kpi-alerts').setAttribute('data-target', summary.pending_alerts);
+        Tracksy.initCounter();
+
+        // Load Orders for Table and Map
+        const orders = await Tracksy.fetch('/orders');
+        const tableBody = document.getElementById('recent-orders-table');
+        
+        orders.slice(0, 8).forEach(order => {
+            const row = document.createElement('tr');
+            row.className = 'border-b border-white/5 hover:bg-white/5 transition';
+            row.innerHTML = `
+                <td class="p-4 font-mono text-xs text-teal">${order.tracking_id}</td>
+                <td class="p-4">
+                    <div class="font-medium">${order.origin_city} &rarr; ${order.dest_city}</div>
+                    <div class="text-[10px] text-text-2">${order.goods_type}</div>
+                </td>
+                <td class="p-4">
+                    <span class="text-[10px] px-2 py-1 rounded uppercase font-bold bg-white/10 text-text-2">${order.status}</span>
+                </td>
+                <td class="p-4 text-lg text-center">${order.transport_mode === 'road' ? '🚚' : order.transport_mode === 'air' ? '✈️' : '🚢'}</td>
+                <td class="p-4">
+                    <a href="/track/${order.tracking_id}" class="text-teal hover:underline text-xs">View</a>
+                </td>
+            `;
+            tableBody.appendChild(row);
+
+            // Add to map if in_transit
+            if (order.status === 'in_transit') {
+                mapManager.addAnimatedMarker({
+                    id: order.id,
+                    lat: order.origin_lat, // simplified
+                    lon: order.origin_lon,
+                    mode: order.transport_mode,
+                    tracking_id: order.tracking_id
+                });
+            }
+        });
+
+        // Load Alerts
+        const alerts = await Tracksy.fetch('/alerts');
+        const alertFeed = document.getElementById('mini-alert-feed');
+        alerts.slice(0, 3).forEach(alert => {
+            const div = document.createElement('div');
+            div.className = 'flex gap-3 text-xs border-b border-white/5 pb-3 last:border-0';
+            div.innerHTML = `
+                <span class="${alert.severity === 'critical' ? 'text-danger' : 'text-warn'}">●</span>
+                <div>
+                    <div class="font-medium">${alert.message}</div>
+                    <div class="text-[10px] text-text-2">${Tracksy.formatDate(alert.created_at)}</div>
+                </div>
+            `;
+            alertFeed.appendChild(div);
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Order Management{% endblock %}
+{% block page_title %}Shipment Lifecycle{% endblock %}
+
+{% block content %}
+<div class="bg-slate rounded-2xl border border-white/5 overflow-hidden">
+    <div class="p-6 border-b border-white/5 flex flex-wrap items-center justify-between gap-4">
+        <h3 class="text-xl font-bold">All Orders</h3>
+        <div class="flex items-center gap-3">
+            <input type="text" placeholder="Search Tracking ID..." class="bg-navy border border-white/10 rounded-lg px-4 py-2 text-sm outline-none focus:border-teal w-64">
+            <button class="bg-teal text-navy px-4 py-2 rounded-lg text-sm font-bold hover:bg-teal-dk transition flex items-center gap-2">
+                <span>⚡</span> Bulk Actions
+            </button>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+            <thead class="bg-white/5 text-text-2 uppercase text-[10px] tracking-widest">
+                <tr>
+                    <th class="p-4">Tracking ID</th>
+                    <th class="p-4">Status</th>
+                    <th class="p-4">Priority</th>
+                    <th class="p-4">Origin Hub</th>
+                    <th class="p-4">Destination</th>
+                    <th class="p-4">Est. Delivery</th>
+                    <th class="p-4">Action</th>
+                </tr>
+            </thead>
+            <tbody id="orders-full-table">
+                <!-- Data -->
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const orders = await Tracksy.fetch('/orders');
+        const tableBody = document.getElementById('orders-full-table');
+
+        orders.forEach(order => {
+            const row = document.createElement('tr');
+            row.className = 'border-b border-white/5 hover:bg-white/5 transition';
+            
+            const prioClass = order.priority === 'urgent' ? 'badge-urgent' : 
+                             order.priority === 'standard' ? 'badge-standard' : 'badge-economy';
+
+            row.innerHTML = `
+                <td class="p-4 font-mono text-xs text-teal">${order.tracking_id}</td>
+                <td class="p-4">
+                    <span class="text-[10px] px-2 py-1 rounded uppercase font-bold bg-white/10 text-text-2">${order.status}</span>
+                </td>
+                <td class="p-4">
+                    <span class="text-[10px] px-2 py-1 rounded uppercase font-bold ${prioClass}">${order.priority}</span>
+                </td>
+                <td class="p-4">${order.origin_city}</td>
+                <td class="p-4">${order.dest_city}</td>
+                <td class="p-4 text-xs text-text-2">${Tracksy.formatDate(order.estimated_eta)}</td>
+                <td class="p-4">
+                    <div class="flex gap-2">
+                        <a href="/track/${order.tracking_id}" class="text-teal hover:underline text-xs">Track</a>
+                        <button class="text-text-2 hover:text-white text-xs">Edit</button>
+                    </div>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    });
+</script>
+{% endblock %}

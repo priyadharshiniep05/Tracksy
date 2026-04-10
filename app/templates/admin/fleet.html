@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Fleet & Drivers{% endblock %}
+{% block page_title %}Fleet Utilization{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 space-y-6">
+        <!-- Vehicles Table -->
+        <div class="bg-slate rounded-2xl border border-white/5 overflow-hidden">
+            <div class="p-6 border-b border-white/5 flex items-center justify-between">
+                <h3 class="text-xl font-bold">Manage Vehicles</h3>
+                <button class="bg-teal text-navy px-4 py-2 rounded-lg text-sm font-bold">+ Add Vehicle</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-white/5 text-text-2 uppercase text-[10px] tracking-widest">
+                        <tr>
+                            <th class="p-4">Plate</th>
+                            <th class="p-4">Type</th>
+                            <th class="p-4">Status</th>
+                            <th class="p-4">Current location</th>
+                            <th class="p-4">Maintenance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fleet-table">
+                        <!-- Data -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Drivers Table -->
+        <div class="bg-slate rounded-2xl border border-white/5 overflow-hidden">
+            <div class="p-6 border-b border-white/5">
+                <h3 class="text-xl font-bold">Drivers Network</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-white/5 text-text-2 uppercase text-[10px] tracking-widest">
+                        <tr>
+                            <th class="p-4">License</th>
+                            <th class="p-4">Rating</th>
+                            <th class="p-4">Deliveries</th>
+                            <th class="p-4">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="drivers-table">
+                        <!-- Data -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance Widget -->
+    <div class="space-y-6">
+        <div class="bg-slate rounded-2xl border border-white/5 p-6 shadow-xl">
+            <h3 class="font-semibold mb-4 flex items-center gap-2"><span>🛠️</span> Predictive Maintenance</h3>
+            <div class="space-y-4" id="maintenance-alerts">
+                <!-- Alerts -->
+            </div>
+        </div>
+        
+        <div class="bg-slate rounded-2xl border border-white/5 p-6 shadow-xl">
+            <h3 class="font-semibold mb-4">Capacity Gauge</h3>
+            <div class="h-48">
+                <canvas id="gauge-capacity"></canvas>
+            </div>
+            <div class="text-center mt-4">
+                <div class="text-3xl font-bold">84%</div>
+                <div class="text-[10px] text-text-2 uppercase tracking-tighter">Avg Utilization</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Load Vehicles
+        const vehicles = await Tracksy.fetch('/fleet/vehicles');
+        const fleetBody = document.getElementById('fleet-table');
+        const maintAlerts = document.getElementById('maintenance-alerts');
+
+        vehicles.forEach(v => {
+            const row = document.createElement('tr');
+            row.className = 'border-b border-white/5 hover:bg-white/5 transition';
+            
+            const isDue = v.mileage_km >= v.next_maintenance_due * 0.95;
+            const statusClass = v.status === 'available' ? 'text-success' : 'text-info';
+
+            row.innerHTML = `
+                <td class="p-4 font-mono text-xs text-teal">${v.license_plate}</td>
+                <td class="p-4 uppercase text-[10px] text-text-2">${v.type}</td>
+                <td class="p-4"><span class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full ${statusClass.replace('text-', 'bg-')}"></span> ${v.status}
+                </span></td>
+                <td class="p-4 text-xs">${v.current_city || 'Mumbai Hub'}</td>
+                <td class="p-4">
+                    <div class="text-[10px] text-text-2">Due at ${v.next_maintenance_due} km</div>
+                    <div class="w-full bg-white/5 h-1 rounded mt-1 overflow-hidden">
+                        <div class="h-full ${isDue ? 'bg-danger' : 'bg-teal'}" style="width: ${Math.min(100, (v.mileage_km/v.next_maintenance_due)*100)}%"></div>
+                    </div>
+                </td>
+            `;
+            fleetBody.appendChild(row);
+
+            if (isDue) {
+                const alert = document.createElement('div');
+                alert.className = 'p-3 bg-danger/10 border border-danger/20 rounded-lg flex items-center justify-between';
+                alert.innerHTML = `
+                    <div class="text-xs">
+                        <div class="font-bold text-danger">${v.license_plate}</div>
+                        <div class="text-white/60">Overdue for service</div>
+                    </div>
+                    <button class="bg-danger text-white text-[10px] px-2 py-1 rounded">Log Action</button>
+                `;
+                maintAlerts.appendChild(alert);
+            }
+        });
+
+        // Load Drivers
+        const drivers = await Tracksy.fetch('/fleet/drivers');
+        const driversBody = document.getElementById('drivers-table');
+        drivers.forEach(d => {
+            const row = document.createElement('tr');
+            row.className = 'border-b border-white/5';
+            row.innerHTML = `
+                <td class="p-4 font-mono text-xs text-teal">${d.license_number}</td>
+                <td class="p-4 text-warn">${'★'.repeat(Math.round(d.rating))}</td>
+                <td class="p-4">${d.total_deliveries}</td>
+                <td class="p-4 text-xs">${d.is_available ? '🟢 Online' : '⚪ Busy'}</td>
+            `;
+            driversBody.appendChild(row);
+        });
+
+        // Gauge Chart
+        const ctx = document.getElementById('gauge-capacity').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [84, 16],
+                    backgroundColor: ['#00D4C8', '#1E3A5F'],
+                    borderWidth: 0,
+                    circumference: 180,
+                    rotation: 270
+                }]
+            },
+            options: { cutout: '80%', plugins: { legend: { display: false } } }
+        });
+    });
+</script>
+{% endblock %}

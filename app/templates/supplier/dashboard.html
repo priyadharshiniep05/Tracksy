@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Supplier Dashboard{% endblock %}
+{% block page_title %}Supplier Home{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-slate p-6 rounded-2xl border border-white/5">
+        <div class="text-text-2 text-xs uppercase mb-1">Total Shipments</div>
+        <div class="text-3xl font-bold" id="total-shipments">0</div>
+    </div>
+    <div class="bg-slate p-6 rounded-2xl border border-white/5">
+        <div class="text-text-2 text-xs uppercase mb-1">In Transit</div>
+        <div class="text-3xl font-bold text-teal" id="transit-count">0</div>
+    </div>
+    <div class="bg-slate p-6 rounded-2xl border border-white/5">
+        <div class="text-text-2 text-xs uppercase mb-1">Eco Savings</div>
+        <div class="text-3xl font-bold text-success">12.4 kg</div>
+    </div>
+</div>
+
+<div class="flex items-center justify-between mb-6">
+    <h3 class="text-xl font-bold">Your Active Orders</h3>
+    <a href="/supplier/new-order" class="bg-teal text-navy px-4 py-2 rounded-lg font-bold hover:bg-teal-dk transition">+ Create New Order</a>
+</div>
+
+<div class="bg-slate rounded-2xl border border-white/5 overflow-hidden">
+    <table class="w-full text-left text-sm">
+        <thead class="bg-white/5 text-text-2 uppercase text-[10px] tracking-widest">
+            <tr>
+                <th class="p-4">Tracking ID</th>
+                <th class="p-4">Destination</th>
+                <th class="p-4">Status</th>
+                <th class="p-4">Est. Delivery</th>
+                <th class="p-4">Tracking</th>
+            </tr>
+        </thead>
+        <tbody id="supplier-orders-table">
+            <!-- Dynamic Rows -->
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const orders = await Tracksy.fetch('/orders');
+        const tableBody = document.getElementById('supplier-orders-table');
+        
+        document.getElementById('total-shipments').innerText = orders.length;
+        document.getElementById('transit-count').innerText = orders.filter(o => o.status === 'in_transit').length;
+
+        orders.forEach(order => {
+            const row = document.createElement('tr');
+            row.className = 'border-b border-white/5 hover:bg-white/5 transition';
+            row.innerHTML = `
+                <td class="p-4 font-mono text-teal">${order.tracking_id}</td>
+                <td class="p-4">${order.dest_city}</td>
+                <td class="p-4">
+                    <span class="text-[10px] px-2 py-1 rounded uppercase font-bold bg-white/10 text-text-2">${order.status}</span>
+                </td>
+                <td class="p-4 text-xs font-medium">${Tracksy.formatDate(order.estimated_eta)}</td>
+                <td class="p-4">
+                    <a href="/track/${order.tracking_id}" class="text-teal hover:underline text-xs">Live Status</a>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation — Tracksy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="/static/css/tracksy.css">
+    <style>
+        .map-full { height: calc(100vh - 250px); }
+    </style>
+</head>
+<body class="bg-navy text-white min-h-screen flex flex-col p-0">
+
+    <!-- Top Info -->
+    <div class="bg-slate p-6 border-b border-white/5 flex items-center justify-between">
+        <div>
+            <div id="nav-id" class="text-xs font-mono text-teal">...</div>
+            <h2 id="nav-dest" class="text-xl font-bold">Navigating to Hub...</h2>
+        </div>
+        <a href="/driver/dashboard" class="bg-white/10 px-4 py-2 rounded-lg text-sm">Cancel</a>
+    </div>
+
+    <!-- Map Area -->
+    <div id="live-fleet-map" class="map-full w-full"></div>
+
+    <!-- Controls -->
+    <div class="h-[250px] bg-slate border-t border-white/5 p-6 space-y-4">
+        <div class="flex gap-4">
+            <div class="flex-1 bg-white/5 p-3 rounded-xl border border-white/5">
+                <div class="text-[10px] text-text-2 uppercase">Next Waypoint</div>
+                <div class="font-bold text-sm">Industrial Hub 4, Bangalore</div>
+            </div>
+            <div class="w-32 bg-white/5 p-3 rounded-xl border border-white/5 text-center">
+                <div class="text-[10px] text-text-2 uppercase">Distance</div>
+                <div id="nav-dist" class="font-bold text-sm">12 km</div>
+            </div>
+        </div>
+
+        <button id="btn-update" class="w-full bg-teal text-navy py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-xl hover:bg-teal-dk transition active:scale-95">
+            📍 Push Manual Location
+        </button>
+
+        <button id="btn-complete" class="w-full bg-white/5 text-success py-3 rounded-xl font-bold border border-success/20 hover:bg-success/10 transition">
+            ✓ Complete Leg / Delivered
+        </button>
+    </div>
+
+    <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/static/js/core.js"></script>
+    <script src="/static/js/map.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('id');
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            mapManager.init();
+            
+            const order = await Tracksy.fetch(`/orders/${orderId}`);
+            document.getElementById('nav-id').innerText = order.tracking_id;
+            document.getElementById('nav-dest').innerText = order.dest_city;
+            document.getElementById('nav-dist').innerText = `${order.distance_km} km`;
+
+            mapManager.addAnimatedMarker({
+                id: order.id,
+                lat: order.origin_lat,
+                lon: order.origin_lon,
+                mode: order.transport_mode,
+                tracking_id: order.tracking_id
+            });
+            
+            mapManager.drawRoute(
+                {lat: order.origin_lat, lon: order.origin_lon},
+                {lat: order.dest_lat, lon: order.dest_lon}
+            );
+
+            document.getElementById('btn-update').addEventListener('click', async () => {
+                try {
+                    // Random small move for demo
+                    const lat = order.origin_lat + (Math.random() - 0.5) * 0.1;
+                    const lon = order.origin_lon + (Math.random() - 0.5) * 0.1;
+                    
+                    await Tracksy.fetch('/tracking/update', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            order_id: order.id,
+                            lat, lon,
+                            status: 'In Transit',
+                            message: 'Driver manual update',
+                            transport_mode: order.transport_mode,
+                            speed_kmh: 45,
+                            heading: 90
+                        })
+                    });
+                    
+                    Tracksy.toast('Location updated!', 'success');
+                    mapManager.addAnimatedMarker({ id: order.id, lat, lon, mode: order.transport_mode, tracking_id: order.tracking_id });
+                } catch (e) {
+                    Tracksy.toast('Update failed', 'error');
+                }
+            });
+
+            document.getElementById('btn-complete').addEventListener('click', async () => {
+                try {
+                    await Tracksy.fetch(`/orders/${orderId}/status?status=delivered`, { method: 'PATCH' });
+                    Tracksy.toast('Leg marked as delivered!', 'success');
+                    setTimeout(() => window.location.href = '/driver/dashboard', 1000);
+                } catch (e) {}
+            });
+        });
+    </script>
+</body>
+</html>

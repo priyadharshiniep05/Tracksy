@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Create Shipment{% endblock %}
+{% block page_title %}New Logistics Order{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="space-y-6">
+        <form id="order-form" class="bg-slate p-6 rounded-2xl border border-white/5 space-y-4 shadow-xl">
+            <h3 class="text-lg font-bold mb-4">Shipment Details</h3>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-[10px] text-text-2 uppercase mb-1">Origin City</label>
+                    <select id="origin_city" required class="w-full bg-navy border border-white/10 rounded-lg p-3 text-sm">
+                        <option value="Mumbai">Mumbai, India</option>
+                        <option value="Delhi">Delhi, India</option>
+                        <option value="London">London, UK</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] text-text-2 uppercase mb-1">Destination City</label>
+                    <select id="dest_city" required class="w-full bg-navy border border-white/10 rounded-lg p-3 text-sm">
+                        <option value="New York">New York, USA</option>
+                        <option value="Hamburg">Hamburg, Germany</option>
+                        <option value="Tokyo">Tokyo, Japan</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-[10px] text-text-2 uppercase mb-1">Weight (kg)</label>
+                    <input type="number" id="weight" step="0.1" value="500" class="w-full bg-navy border border-white/10 rounded-lg p-3 text-sm">
+                </div>
+                <div>
+                    <label class="block text-[10px] text-text-2 uppercase mb-1">Goods Type</label>
+                    <select id="goods_type" class="w-full bg-navy border border-white/10 rounded-lg p-3 text-sm">
+                        <option>Electronics</option>
+                        <option>Pharma</option>
+                        <option>Automotive</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[10px] text-text-2 uppercase mb-2">Transport Optimization Preference</label>
+                <div class="flex justify-between text-[10px] text-text-2 mb-2">
+                    <span>🟢 Ultra Cheap (Sea)</span>
+                    <span>🔴 Emergency (Air)</span>
+                </div>
+                <input type="range" id="slider-optimization" min="0" max="1" step="0.25" value="0.5" class="w-full h-2 bg-navy rounded-lg appearance-none cursor-pointer accent-teal">
+                <div class="flex justify-between text-[10px] text-text-2 mt-1">
+                    <span>Economy</span>
+                    <span>Balanced</span>
+                    <span>Express</span>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[10px] text-text-2 uppercase mb-1">Special Instructions</label>
+                <textarea id="instructions" class="w-full bg-navy border border-white/10 rounded-lg p-3 text-sm h-20" placeholder="Optional notes..."></textarea>
+            </div>
+
+            <button type="submit" class="w-full bg-teal text-navy font-bold py-4 rounded-xl shadow-lg hover:bg-teal-dk transition transform hover:scale-[1.01] active:scale-95">
+                Generate AI Logistics Plan
+            </button>
+        </form>
+    </div>
+
+    <!-- AI View -->
+    <div class="space-y-6">
+        <div id="ai-recommendation" class="bg-navy border-2 border-dashed border-white/10 rounded-2xl p-8 text-center flex flex-col items-center justify-center min-h-[400px]">
+            <div class="text-4xl mb-4 opacity-20">📊</div>
+            <p class="text-text-2 text-sm italic">Adjust parameters to see AI route optimization & predictions.</p>
+        </div>
+
+        <div id="ai-active-view" class="hidden bg-slate rounded-2xl border border-teal/30 p-6 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-2 bg-teal text-navy text-[10px] font-bold uppercase rotate-45 transform translate-x-4 -translate-y-1 w-24 text-center">Recommended</div>
+            <h3 class="font-bold text-lg mb-4">AI Optimal Route Strategy</h3>
+            
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-white/5 p-3 rounded-lg">
+                    <div class="text-[10px] text-text-2 uppercase mb-1">Est. Cost</div>
+                    <div id="view-cost" class="text-xl font-bold text-white">$0.00</div>
+                </div>
+                <div class="bg-white/5 p-3 rounded-lg">
+                    <div class="text-[10px] text-text-2 uppercase mb-1">Est. Duration</div>
+                    <div id="view-time" class="text-xl font-bold text-teal">0 Days</div>
+                </div>
+            </div>
+
+            <div class="bg-white/5 p-4 rounded-xl mb-4">
+                <div class="text-xs font-bold mb-2 flex items-center gap-2"><span>🌿</span> Carbon Footprint</div>
+                <div class="flex items-center gap-4">
+                    <div class="flex-1 bg-navy h-2 rounded-full overflow-hidden">
+                        <div id="carbon-bar" class="bg-success h-full" style="width: 30%"></div>
+                    </div>
+                    <span id="view-carbon" class="text-xs font-bold text-success">0 kg</span>
+                </div>
+            </div>
+
+            <div class="p-4 bg-navy/50 rounded-xl border border-white/5 mb-6">
+                <div class="text-xs font-bold mb-2 flex items-center gap-2"><span>🧠</span> Why this route?</div>
+                <p id="view-explanation" class="text-[11px] text-text-2 leading-relaxed">Explanation goes here...</p>
+            </div>
+            
+            <button id="btn-confirm" class="w-full bg-teal text-navy font-bold py-3 rounded-lg shadow-xl hover:bg-teal-dk transition">
+                Confirm & Dispatch Hub Order
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/multimodal.js"></script>
+<script>
+    const form = document.getElementById('order-form');
+    let currentBestRoute = null;
+
+    // Live Preview
+    const updatePreview = async () => {
+        const payload = {
+            origin_city: document.getElementById('origin_city').value,
+            dest_city: document.getElementById('dest_city').value,
+            weight_kg: parseFloat(document.getElementById('weight').value),
+            slider: parseFloat(document.getElementById('slider-optimization').value)
+        };
+
+        try {
+            // Simplified: manually calling the math or a preview endpoint
+            // For now, we'll just show the UI when data is filled
+            document.getElementById('ai-recommendation').classList.add('hidden');
+            document.getElementById('ai-active-view').classList.remove('hidden');
+            
+            // Mock preview values (in real app, call /api/routes/optimize)
+            const baseDist = 5000;
+            const cost = payload.weight_kg * 0.5 * (1 - payload.slider + 0.1) + (baseDist * 0.1);
+            const time = (baseDist / 100) * (1 - payload.slider + 0.3);
+            
+            document.getElementById('view-cost').innerText = `$${Math.round(cost).toLocaleString()}`;
+            document.getElementById('view-time').innerText = `${Math.round(time/24)} Days`;
+            document.getElementById('view-carbon').innerText = `${Math.round(payload.weight_kg * 0.2)} kg`;
+            document.getElementById('view-explanation').innerText = `Primary delivery via ${payload.slider > 0.5 ? 'Express Air' : 'Strategic Sea'} hub. Optimized for ${payload.slider > 0.75 ? 'maximum speed' : 'balanced costs'} given the current ${payload.weight_kg}kg payload.`;
+            
+            currentBestRoute = { ...payload, cost_usd: cost, estimated_hours: time };
+        } catch (e) {}
+    };
+
+    ['origin_city', 'dest_city', 'weight', 'slider-optimization'].forEach(id => {
+        document.getElementById(id).addEventListener('change', updatePreview);
+    });
+
+    document.getElementById('slider-optimization').addEventListener('input', updatePreview);
+
+    document.getElementById('btn-confirm').addEventListener('click', async () => {
+        const payload = {
+            origin_city: document.getElementById('origin_city').value,
+            dest_city: document.getElementById('dest_city').value,
+            origin_address: "Supplier Warehouse",
+            origin_lat: 19.0760, // Fixed Mumbai/Delhi for demo
+            origin_lon: 72.8777,
+            dest_address: "Customer Address",
+            dest_lat: 40.7128,
+            dest_lon: -74.0060,
+            weight_kg: parseFloat(document.getElementById('weight').value),
+            volume_m3: 1.5,
+            priority: 'urgent',
+            transport_mode: 'road',
+            goods_type: document.getElementById('goods_type').value,
+            special_instructions: document.getElementById('instructions').value
+        };
+
+        try {
+            const res = await Tracksy.fetch('/orders', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            Tracksy.toast('Order Placed Successfully!', 'success');
+            setTimeout(() => window.location.href = '/supplier/dashboard', 1500);
+        } catch (e) {
+            Tracksy.toast(e.message, 'error');
+        }
+    });
+
+    form.addEventListener('submit', (e) => e.preventDefault());
+</script>
+{% endblock %}

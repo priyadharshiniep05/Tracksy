@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Tracksy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/tracksy.css">
+</head>
+<body class="bg-navy flex items-center justify-center min-h-screen p-4">
+
+    <div class="max-w-md w-full bg-slate p-8 rounded-2xl shadow-2xl border border-white/5 fade-in">
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-bold text-teal mb-2">Tracksy</h1>
+            <p class="text-text-2">Intelligent Logistics Optimization</p>
+        </div>
+
+        <form id="login-form" class="space-y-6">
+            <div>
+                <label class="block text-sm font-medium text-text-2 mb-2">Email Address</label>
+                <input type="email" id="email" required class="w-full bg-navy border border-white/10 rounded-lg p-3 text-white focus:border-teal outline-none transition" placeholder="admin@tracksy.io">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-text-2 mb-2">Password</label>
+                <input type="password" id="password" required class="w-full bg-navy border border-white/10 rounded-lg p-3 text-white focus:border-teal outline-none transition" placeholder="••••••••">
+            </div>
+
+            <button type="submit" class="w-full bg-teal hover:bg-teal-dk text-navy font-bold py-3 rounded-lg transition transform hover:scale-[1.02] active:scale-95">
+                Sign In
+            </button>
+        </form>
+
+        <div class="mt-8 pt-8 border-t border-white/5 text-center">
+            <p class="text-xs text-text-2 mb-4 uppercase tracking-widest">Demo Roles</p>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="quickLogin('admin@tracksy.io')" class="text-[10px] p-2 bg-white/5 rounded hover:bg-white/10 transition">Admin Login</button>
+                <button onclick="quickLogin('supplier@demo.com')" class="text-[10px] p-2 bg-white/5 rounded hover:bg-white/10 transition">Supplier Login</button>
+                <button onclick="quickLogin('driver@demo.com')" class="text-[10px] p-2 bg-white/5 rounded hover:bg-white/10 transition">Driver Login</button>
+                <button onclick="quickLogin('customer@demo.com')" class="text-[10px] p-2 bg-white/5 rounded hover:bg-white/10 transition">Customer Login</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
+
+    <script src="/static/js/core.js"></script>
+    <script>
+        function quickLogin(email) {
+            document.getElementById('email').value = email;
+            document.getElementById('password').value = 'tracksy2024';
+            document.getElementById('login-form').dispatchEvent(new Event('submit'));
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const data = await Tracksy.fetch('/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ email, password })
+                });
+
+                localStorage.setItem('tracksy_token', data.access_token);
+                localStorage.setItem('tracksy_role', data.role);
+                localStorage.setItem('tracksy_user_id', data.user_id);
+
+                Tracksy.toast('Login successful!', 'success');
+                
+                setTimeout(() => {
+                    if (data.role === 'admin') window.location.href = '/admin/dashboard';
+                    else if (data.role === 'supplier') window.location.href = '/supplier/dashboard';
+                    else if (data.role === 'driver') window.location.href = '/driver/dashboard';
+                    else window.location.href = '/admin/dashboard';
+                }, 1000);
+
+            } catch (err) {
+                Tracksy.toast(err.message, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

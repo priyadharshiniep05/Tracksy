@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Driver Dashboard{% endblock %}
+{% block page_title %}Assigned Shipments{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-2xl mx-auto">
+    <div id="no-orders" class="hidden bg-slate p-12 rounded-2xl border border-dashed border-white/10 text-center">
+        <div class="text-4xl mb-4 opacity-20">🚚</div>
+        <p class="text-text-2">No active shipments assigned. Stay alert for new hub dispatches.</p>
+    </div>
+
+    <div id="driver-orders-list" class="space-y-4">
+        <!-- Dynamic Cards -->
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const orders = await Tracksy.fetch('/orders');
+        const container = document.getElementById('driver-orders-list');
+        const emptyState = document.getElementById('no-orders');
+
+        if (orders.length === 0) {
+            emptyState.classList.remove('hidden');
+        } else {
+            orders.forEach(order => {
+                const card = document.createElement('div');
+                card.className = 'bg-slate p-6 rounded-2xl border border-white/5 flex items-center justify-between hover:border-teal/50 transition';
+                card.innerHTML = `
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-2">
+                             <span class="text-[10px] bg-teal/20 text-teal px-2 py-1 rounded font-bold uppercase">${order.status}</span>
+                             <span class="text-xs font-mono text-text-2">${order.tracking_id}</span>
+                        </div>
+                        <h3 class="font-bold text-lg">${order.origin_city} &rarr; ${order.dest_city}</h3>
+                        <p class="text-xs text-text-2 mt-1">${order.goods_type} • ${order.weight_kg}kg</p>
+                    </div>
+                    <div>
+                        <a href="/driver/navigation?id=${order.id}" class="bg-teal text-navy px-4 py-2 rounded-lg font-bold text-sm">Start Leg</a>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+    });
+</script>
+{% endblock %}

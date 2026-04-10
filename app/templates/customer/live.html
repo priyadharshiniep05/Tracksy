@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Shipment — Tracksy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="/static/css/tracksy.css">
+</head>
+<body class="bg-navy text-white min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="h-16 border-b border-white/5 flex items-center justify-between px-6 bg-navy/80 backdrop-blur-md sticky top-0 z-[1000]">
+        <h1 class="text-xl font-bold text-teal">Tracksy Live Tracking</h1>
+        <div class="flex items-center gap-4">
+            <span id="track-id" class="text-xs font-mono bg-white/5 px-2 py-1 rounded text-text-2">...</span>
+            <span id="status-badge" class="text-[10px] px-2 py-1 rounded uppercase font-bold bg-teal text-navy">Loading</span>
+        </div>
+    </nav>
+
+    <div class="flex-1 flex flex-col lg:flex-row relative">
+        <!-- Map (Full View) -->
+        <div id="live-fleet-map" class="flex-1 min-h-[400px] lg:h-auto"></div>
+
+        <!-- Info Panel Overlay/Sidebar -->
+        <div class="lg:w-[450px] bg-slate/95 backdrop-blur-xl border-t lg:border-t-0 lg:border-l border-white/10 p-6 overflow-y-auto z-[999]">
+            <div id="eta-card" class="bg-teal p-6 rounded-2xl text-navy mb-8 shadow-2xl transition-all hover:scale-[1.02]">
+                <div class="text-[10px] uppercase font-bold opacity-60 mb-1">Estimated Arrival</div>
+                <div id="view-eta" class="text-3xl font-bold mb-4">...</div>
+                <div class="w-full bg-navy/10 h-2 rounded-full overflow-hidden">
+                    <div id="track-progress" class="bg-navy h-full" style="width: 45%"></div>
+                </div>
+                <div class="flex justify-between text-[10px] font-bold mt-2">
+                    <span>Origin Hub</span>
+                    <span id="progress-pct">45% Completed</span>
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="space-y-8 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-white/10">
+                <div class="flex gap-6 relative">
+                    <div class="w-6 h-6 rounded-full bg-teal flex items-center justify-center z-10 text-[10px] text-navy font-bold">✓</div>
+                    <div>
+                        <div class="text-sm font-bold">Order Confirmed</div>
+                        <div class="text-xs text-text-2">Hub processing complete</div>
+                    </div>
+                </div>
+                <div class="flex gap-6 relative">
+                    <div class="w-6 h-6 rounded-full bg-teal flex items-center justify-center z-10 text-[10px] text-navy font-bold">✓</div>
+                    <div>
+                        <div class="text-sm font-bold">Dispatching</div>
+                        <div class="text-xs text-text-2">Vehicle assigned & path optimized</div>
+                    </div>
+                </div>
+                <div class="flex gap-6 relative">
+                    <div class="w-6 h-6 rounded-full bg-teal ring-4 ring-teal/20 flex items-center justify-center z-10 text-[10px] text-navy font-bold animate-pulse">●3</div>
+                    <div>
+                        <div class="text-sm font-bold text-teal">In Transit</div>
+                        <div id="current-pos-name" class="text-xs text-text-2 italic">Tracking live satellite position...</div>
+                    </div>
+                </div>
+                <div class="flex gap-6 relative opacity-30">
+                    <div class="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center z-10 text-[10px] font-bold">4</div>
+                    <div>
+                        <div class="text-sm font-bold">Out for Delivery</div>
+                        <div class="text-xs text-text-2">Last mile courier segment</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 gap-4 mt-8 pt-8 border-t border-white/5">
+                <div class="bg-white/5 p-4 rounded-xl">
+                    <div class="text-[10px] text-text-2 uppercase mb-1">Transport Mode</div>
+                    <div id="view-mode" class="text-lg font-bold">✈️ Air</div>
+                </div>
+                <div class="bg-white/5 p-4 rounded-xl">
+                    <div class="text-[10px] text-text-2 uppercase mb-1">Carbon Footprint</div>
+                    <div id="view-carbon" class="text-lg font-bold text-success">12.4 kg</div>
+                </div>
+            </div>
+
+            <!-- AI Insight -->
+            <div class="mt-6 p-4 bg-teal/5 rounded-xl border border-teal/10">
+                <h4 class="text-teal font-bold text-xs mb-2">🧠 AI Reroute Decision</h4>
+                <p class="text-[10px] text-text-2 leading-relaxed">
+                    Automated reroute system active. Weather in Indian Ocean is calm. Path was adjusted to avoid port congestion in Mumbai, saving 12 hours.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/static/js/core.js"></script>
+    <script src="/static/js/map.js"></script>
+    <script>
+        const trackingId = "{{ tracking_id }}";
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Init Map focused on broad view
+            mapManager.init({ center: [20, 40], zoom: 3 });
+            
+            async function refreshTracker() {
+                try {
+                    const data = await Tracksy.fetch(`/tracking/public/${trackingId}`);
+                    
+                    document.getElementById('track-id').innerText = data.tracking_id;
+                    document.getElementById('status-badge').innerText = data.status;
+                    document.getElementById('view-eta').innerText = Tracksy.formatDate(data.estimated_eta).split(',')[0];
+                    document.getElementById('view-carbon').innerText = `${data.carbon_kg} kg`;
+                    document.getElementById('view-mode').innerText = data.mode.toUpperCase();
+                    document.getElementById('current-pos-name').innerText = `Currently at ${data.current_pos.lat.toFixed(2)}°N, ${data.current_pos.lon.toFixed(2)}°E`;
+
+                    // Update Map
+                    const marker = mapManager.addAnimatedMarker({
+                        id: 0,
+                        lat: data.current_pos.lat,
+                        lon: data.current_pos.lon,
+                        mode: data.mode,
+                        tracking_id: data.tracking_id
+                    });
+                    
+                    mapManager.drawRoute(data.origin, data.dest);
+                    
+                } catch (e) {
+                    Tracksy.toast('Error loading tracking data', 'error');
+                }
+            }
+
+            refreshTracker();
+            setInterval(refreshTracker, 10000); // Polling for demo
+        });
+    </script>
+</body>
+</html>
